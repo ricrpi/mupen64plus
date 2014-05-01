@@ -42,7 +42,7 @@ for component in ${M64P_COMPONENTS}; do
 	plugin=`echo "${component}" | cut -d / -f 2`
 	repository=`echo "${component}" | cut -d / -f 1`
 
-	if [ ! -e "../mupen64plus-${plugin}" ]; then
+	if [ ! -e "./mupen64plus-${plugin}" ]; then
 		echo "************************************ Downloading ${plugin} from ${repository}"
 		git clone https://github.com/${repository}/mupen64plus-${plugin} ../mupen64plus-${plugin}
 	fi
@@ -52,7 +52,7 @@ for component in ${M64P_COMPONENTS}; do
 	elif  [ "${plugin}" = "rom" ]; then
 		echo "************************************ Building test ROM"
 		mkdir -p ./test/
-		cp ../mupen64plus-rom/m64p_test_rom.v64 ./test/
+		cp ./mupen64plus-rom/m64p_test_rom.v64 ./test/
 		continue
 	elif  [ "${plugin}" = "ui-console" ]; then
 		component_type="front-end"
@@ -62,20 +62,20 @@ for component in ${M64P_COMPONENTS}; do
 
 	echo "************************************ Building ${plugin} ${component_type}"
 	if [ -n "$CLEAN" ]; then
-	"$MAKE" -C ../mupen64plus-${plugin}/projects/unix clean $@
+	"$MAKE" -C ./mupen64plus-${plugin}/projects/unix clean $@
 	fi
-	"$MAKE" -C ../mupen64plus-${plugin}/projects/unix all $@
-	"$MAKE" -C ../mupen64plus-${plugin}/projects/unix install $@ ${MAKE_INSTALL} DESTDIR="$(pwd)/test/"
+	"$MAKE" -C ./mupen64plus-${plugin}/projects/unix all $@
+	"$MAKE" -C ./mupen64plus-${plugin}/projects/unix install $@ ${MAKE_INSTALL} DESTDIR="$(pwd)/test/"
 
 	mkdir -p ./test/doc
 	for doc in LICENSES README RELEASE; do
-		if [ -e "../mupen64plus-${component}/${doc}" ]; then
-			cp "../mupen64plus-${plugin}/${doc}" "./test/doc/${doc}-mupen64plus-${plugin}"
+		if [ -e "./mupen64plus-${component}/${doc}" ]; then
+			cp "./mupen64plus-${plugin}/${doc}" "./test/doc/${doc}-mupen64plus-${plugin}"
 		fi
 	done
 	for subdoc in gpl-license font-license lgpl-license module-api-versions.txt; do
-		if [ -e "../mupen64plus-${plugin}/doc/${subdoc}" ]; then
-			cp "../mupen64plus-${plugin}/doc/${subdoc}" ./test/doc/
+		if [ -e "./mupen64plus-${plugin}/doc/${subdoc}" ]; then
+			cp "./mupen64plus-${plugin}/doc/${subdoc}" ./test/doc/
 		fi
 	done
 done
