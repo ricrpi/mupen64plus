@@ -4,7 +4,7 @@
 set -e
 
 if [ "$1" = "-h" -o "$1" = "--help" ]; then
-	echo "Script to set Username and email address for updating github repositories"
+	echo "Script to set remote URL for updating github repositories using SSH"
 	echo "Usage:"
 	echo "[Environment Vars] ./cfg-developer.sh"
 	echo
@@ -35,9 +35,8 @@ for component in ${M64P_COMPONENTS}; do
 
 	cd $repository/mupen64plus-${plugin}
 	
-	git config --global user.email "$USER"
-	git config --global user.name "$EMAIL"
-
+	NEW_REMOTE=`git remote -v | cut -f 2 | grep "fetch" | cut -d '(' -f 1 | sed -r 's:https\://github\.com/:git@github.com\::g'`
+	git remote  set-url origin "$NEW_REMOTE"
 	cd ../..
 done
 
