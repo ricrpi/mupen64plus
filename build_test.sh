@@ -77,31 +77,35 @@ else
 	fi
 fi
 
-#------------------------------- Download missing plugins --------------------------------------------
+#------------------------------- Download/Update plugins --------------------------------------------
 
 if [ "$M64P_COMPONENTS_FILE" -eq 1 ]; then
-for component in ${M64P_COMPONENTS}; do
-	plugin=`echo "${component}" | cut -d , -f 1`
-	repository=`echo "${component}" | cut -d , -f 2`
-	branch=`echo "${component}" | cut -d , -f 3`
+	for component in ${M64P_COMPONENTS}; do
+		plugin=`echo "${component}" | cut -d , -f 1`
+		repository=`echo "${component}" | cut -d , -f 2`
+		branch=`echo "${component}" | cut -d , -f 3`
 
-	if [ -z "$plugin" ]; then
-		continue
-	fi
+		if [ -z "$plugin" ]; then
+			continue
+		fi
 
-	if [ -z "$repository" ]; then
-		repository=$REPO
-	fi
+		if [ -z "$repository" ]; then
+			repository=$REPO
+		fi
 
-	if [ -z "$branch" ]; then
-		branch="master"
-	fi
+		if [ -z "$branch" ]; then
+			branch="master"
+		fi
 
-	if [ ! -e "${BUILDDIR}/$repository/mupen64plus-${plugin}" ]; then
-		echo "************************************ Downloading ${plugin} from ${repository} to ${BUILDDIR}/$repository/mupen64plus-${plugin}"
-		git clone https://github.com/${repository}/mupen64plus-${plugin} ${BUILDDIR}/$repository/mupen64plus-${plugin}
-	fi
-done
+		if [ ! -e "${BUILDDIR}/$repository/mupen64plus-${plugin}" ]; then
+			echo "************************************ Downloading ${plugin} from ${repository} to ${BUILDDIR}/$repository/mupen64plus-${plugin}"
+			git clone https://github.com/${repository}/mupen64plus-${plugin} ${BUILDDIR}/$repository/mupen64plus-${plugin}
+		else
+			cd $repository/mupen64plus-$plugin
+			echo `git pull origin | grep -v "Already up-to-date."` "\c"
+			cd ../..
+		fi
+	done
 fi
 
 #----------------------------------- Build Symbolic Links ----------------------------------------
@@ -155,14 +159,15 @@ if [ $M64P_COMPONENTS_FILE -eq 1 ]; then
 			branch="master"
 		fi
 
-		cd ${BUILDDIR}/mupen64plus-${plugin}
+		cd $repository/mupen64plus-${plugin}
 		currentBranch=`git branch | grep [*] | cut -b 3-;`
-		cd ..
-
+		
 		if [ ! "$branch" = "$currentBranch" ]; then
 			echo "************************************ Changing branch from ${currentBranch} to ${branch} for mupen64plus-${plugin}"
 			git checkout $branch
 		fi
+
+		cd ../..
 	done
 fi
 
@@ -170,6 +175,7 @@ fi
 
 for component in ${M64P_COMPONENTS}; do
 	plugin=`echo "${component}" | cut -d , -f 1`
+	repository=`echo "${component}" | cut -d , -f 2`
 
 	if [ -z "$plugin" ]; then
 		continue
@@ -181,7 +187,7 @@ for component in ${M64P_COMPONENTS}; do
 		if [ "$0" = "./build_test.sh" ]; then
 			echo "************************************ Building test ROM"
 			mkdir -p ./test/
-			cp ${BUILDDIR}/mupen64plus-rom/m64p_test_rom.v64 ./test/
+			cp ${BUILDDIR}/$repository/mupen64plus-rom/m64p_test_rom.v64 ./test/
 			continue
 		fi
 	elif  [ "${plugin}" = "ui-console" ]; then
@@ -192,22 +198,22 @@ for component in ${M64P_COMPONENTS}; do
 
 	echo "************************************ Building ${plugin} ${component_type}"
 	if [ -n "$CLEAN" ]; then
-	"$MAKE" -C ${BUILDDIR}/mupen64plus-${plugin}/projects/unix clean $@
+	"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix clean $@
 	fi
 
-	"$MAKE" -C ${BUILDDIR}/mupen64plus-${plugin}/projects/unix all $@
-	"$MAKE" -C ${BUILDDIR}/mupen64plus-${plugin}/projects/unix install $@ ${MAKE_INSTALL} DESTDIR="$(pwd)/test/"
+	"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $@
+	"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $@ ${MAKE_INSTALL} DESTDIR="$(pwd)/test/"
 
 
 	mkdir -p ./test/doc
 	for doc in LICENSES README RELEASE; do
-		if [ -e "${BUILDDIR}/mupen64plus-${component}/${doc}" ]; then
-			cp "${BUILDDIR}/mupen64plus-${plugin}/${doc}" "./test/doc/${doc}-mupen64plus-${plugin}"
+		if [ -e "${BUILDDIR}/$repository/mupen64plus-${component}/${doc}" ]; then
+			cp "${BUILDDIR}/$repository/mupen64plus-${plugin}/${doc}" "./test/doc/${doc}-mupen64plus-${plugin}"
 		fi
 	done
 	for subdoc in gpl-license font-license lgpl-license module-api-versions.txt; do
-		if [ -e "${BUILDDIR}/mupen64plus-${plugin}/doc/${subdoc}" ]; then
-			cp "${BUILDDIR}/mupen64plus-${plugin}/doc/${subdoc}" ./test/doc/
+		if [ -e "${BUILDDIR}/$repository/mupen64plus-${plugin}/doc/${subdoc}" ]; then
+			cp "${BUILDDIR}/$repository/mupen64plus-${plugin}/doc/${subdoc}" ./test/doc/
 		fi
 	done
 done
