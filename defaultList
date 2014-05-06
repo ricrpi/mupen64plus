@@ -4,7 +4,8 @@
 
 core			ricrpi		ric_dev		# need to merge with master branch
 
-ui-console		mupen64plus
+#ui-console		ricrpi
+ui-console		mupen64plus			
 
 audio-omx		ricrpi
 audio-sdl		mupen64plus			# compiles and works but slower than omx
