@@ -102,7 +102,8 @@ if [ "$M64P_COMPONENTS_FILE" -eq 1 ]; then
 			git clone https://github.com/${repository}/mupen64plus-${plugin} ${BUILDDIR}/$repository/mupen64plus-${plugin}
 		else
 			cd $repository/mupen64plus-$plugin
-			echo `git pull origin | grep -v "Already up-to-date."` "\c"
+			echo "checking $plugin from $repository is up-to-date"
+			echo `git pull origin $branch `
 			cd ../..
 		fi
 	done
@@ -197,10 +198,8 @@ for component in ${M64P_COMPONENTS}; do
 	fi
 
 	echo "************************************ Building ${plugin} ${component_type}"
-	if [ -n "$CLEAN" ]; then
+	
 	"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix clean $@
-	fi
-
 	"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $@
 	"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $@ ${MAKE_INSTALL}
 
