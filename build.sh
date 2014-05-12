@@ -10,6 +10,7 @@ if [ "$1" = "-h" -o "$1" = "--help" ]; then
 	echo
 	echo "Environment Variable options:"
 	echo ""
+	echo "    CLEAN=[1]                 Clean before build"
 	echo "    MAKE=[make]               Make Utility to use"
 	echo "    M64P_COMPONENTS=          The list of components to download and build"
 	echo "                              The default is to read ./pluginList. "
@@ -29,6 +30,10 @@ defaultPluginList="defaultList"
 #------------------- set some variables if not specified ----------------------------------------
 
 IAM=`whoami`
+
+if [ -z "$CLEAN" ]; then
+	CLEAN="1"
+fi
 
 if [ -z "$MAKE" ]; then
 	MAKE=make
@@ -58,10 +63,6 @@ fi
 set RASPBERRY_PI=1
 MAKE_INSTALL="PLUGINDIR= SHAREDIR= BINDIR= MANDIR= LIBDIR= INCDIR=api LDCONFIG=true "
 
-#------------------------------- create test folder --------------------------------------------
-
-mkdir -p ./test/
-
 #------------------------------- SDL dev libraries --------------------------------------------
 
 if [ "$IAM" = "root" ]; then
@@ -77,13 +78,47 @@ else
 	fi
 fi
 
+#------------------------------- GCC 4.7 libraries --------------------------------------------
+
+if [ "$IAM" = "root" ]; then
+	if [ ! -e "/usr/bin/gcc-4.7" ]; then
+		echo "************************************ Downloading/Installing GCC 4.7"
+		apt-get install gcc-4.7
+		apt-get install g++-4.7
+	fi
+else
+	if [ ! -e "/usr/bin/gcc-4.7" ]; then
+		echo "You should install the GCC 4.7 compiler"
+		echo "Either run this script with sudo/root or run 'apt-get install gcc-4.7 g++-4.7'"
+		exit 1
+	fi
+fi
+
+if [ -e "/usr/bin/gcc-4.7" ]; then
+	set CC="gcc-4.7"
+	set CXX="g++-4.7"
+fi
+
 #------------------------------- Download/Update plugins --------------------------------------------
+set -x
+if [ 1 -eq 1 ]; then
+	# update this installer
+	RESULT=`git pull origin`
+	RESULT=`echo "$RESULT" | grep -v "Already up-to-date" `	
+	if [ -n $RESULT ]; then
+		echo ""
+		echo "    Installer updated. Please re-run"
+		echo ""
+		exit
+	fi
+fi
 
 if [ "$M64P_COMPONENTS_FILE" -eq 1 ]; then
 	for component in ${M64P_COMPONENTS}; do
 		plugin=`echo "${component}" | cut -d , -f 1`
 		repository=`echo "${component}" | cut -d , -f 2`
 		branch=`echo "${component}" | cut -d , -f 3`
+		upstream=`echo "${component}" | cut -d , -f 4`
 
 		if [ -z "$plugin" ]; then
 			continue
@@ -199,6 +234,9 @@ for component in ${M64P_COMPONENTS}; do
 
 	echo "************************************ Building ${plugin} ${component_type}"
 	
+	if [ "$CLEAN" -gt 0 ]; then
+	"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix clean $@
+	fi
 	"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix clean $@
 	"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $@
 	"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $@ ${MAKE_INSTALL}

@@ -1,23 +1,24 @@
 # This is the list of plugins to be installed by the automated scripts
 
-#plugin name		repository	branch
+#plugin name		repository	branch		upstream
 
-core			ricrpi		ric_dev		# need to merge with master branch
+core			ricrpi		ric_dev		mupen64plus	# need to merge with master branch
 
-#ui-console		ricrpi
-ui-console		mupen64plus			
+#ui-console		ricrpi		master		mupen64plus
+ui-console		mupen64plus	master		
 
-audio-omx		ricrpi
-audio-sdl		mupen64plus			# compiles and works but slower than omx
+audio-omx		ricrpi		master		
+audio-sdl		mupen64plus	master				# compiles and works but slower than omx
 
-#input-sdl		ricrpi				# optimizations make no perceivable difference
-input-sdl		mupen64plus
+#input-sdl		ricrpi		master		mupen64plus	# optimizations make no perceivable difference
+input-sdl		mupen64plus	master
 
-rsp-hle			ricrpi				# mupen64plus version fails to build jpec.c with -O3
-#rsp-cxd4		mupen64plus			# unknown compatibility, forked from cxd4
-#rsp-z64		mupen64plus			# unknown compatibility
+rsp-hle			ricrpi		master		mupen64plus	# mupen64plus version fails to build jpec.c with -O3
+#rsp-hle		mupen64plus	master				# mupen64plus version fails to build jpec.c with -O3
+#rsp-cxd4		mupen64plus	master				# unknown compatibility, forked from cxd4
+#rsp-z64		mupen64plus	master				# unknown compatibility
 			
-video-gles2rice		ricrpi
-video-gles2n64		ricrpi
+video-gles2rice		ricrpi		master
+video-gles2n64		ricrpi		master
 
-rom			mupen64plus
+rom			mupen64plus	master
