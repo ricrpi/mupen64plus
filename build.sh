@@ -27,12 +27,14 @@ fi
 M64P_COMPONENTS_FILE=0
 defaultPluginList="defaultList"
 
+PATH=$PWD:$PATH
+
 #------------------- set some variables if not specified ----------------------------------------
 
 IAM=`whoami`
 
 if [ -z "$CLEAN" ]; then
-	CLEAN="1"
+	CLEAN=1
 fi
 
 if [ -z "$MAKE" ]; then
@@ -95,19 +97,26 @@ else
 fi
 
 if [ -e "/usr/bin/gcc-4.7" ]; then
-	set CC="gcc-4.7"
-	set CXX="g++-4.7"
+	if [ ! -e "gcc" ]; then
+		ln -s /usr/bin/gcc-4.7 gcc
+	fi
+fi
+
+if [ -e "/usr/bin/g++-4.7" ]; then
+	if [ ! -e "g++" ]; then
+		ln -s /usr/bin/g++-4.7 g++
+	fi
 fi
 
 #------------------------------- Download/Update plugins --------------------------------------------
-set -x
+
 if [ 1 -eq 1 ]; then
 	# update this installer
 	RESULT=`git pull origin`
-	RESULT=`echo "$RESULT" | grep -v "Already up-to-date" `	
-	if [ -n $RESULT ]; then
+	
+	if [ "$RESULT" != "Already up-to-date." ]; then
 		echo ""
-		echo "    Installer updated. Please re-run"
+		echo "    Installer updated. Please re-run build.sh"
 		echo ""
 		exit
 	fi
@@ -118,8 +127,7 @@ if [ "$M64P_COMPONENTS_FILE" -eq 1 ]; then
 		plugin=`echo "${component}" | cut -d , -f 1`
 		repository=`echo "${component}" | cut -d , -f 2`
 		branch=`echo "${component}" | cut -d , -f 3`
-		upstream=`echo "${component}" | cut -d , -f 4`
-
+		
 		if [ -z "$plugin" ]; then
 			continue
 		fi
@@ -142,29 +150,6 @@ if [ "$M64P_COMPONENTS_FILE" -eq 1 ]; then
 			cd ../..
 		fi
 	done
-fi
-
-#----------------------------------- Build Symbolic Links ----------------------------------------
-
-if [ 0 -eq 1 ]; then
-if [ $M64P_COMPONENTS_FILE -eq 1 ]; then
-	echo "Building Symbolic Links"
-	for component in ${M64P_COMPONENTS}; do
-		plugin=`echo "${component}" | cut -d , -f 1`
-		repository=`echo "${component}" | cut -d , -f 2`
-
-		if [ -z "$plugin" ]; then
-			continue
-		fi
-
-		# build link to plugin in current directory
-		ln -s -f $repository/mupen64plus-$plugin mupen64plus-$plugin
-
-		if [ !"${plugin}" = "core" ]; then
-			ln -s -f $repository/mupen64plus-core mupen64plus-core
-		fi
-	done
-fi
 fi
 
 #-------------------------------------- set API Directory ----------------------------------------
@@ -222,8 +207,8 @@ for component in ${M64P_COMPONENTS}; do
 	elif  [ "${plugin}" = "rom" ]; then
 		if [ "$0" = "./build_test.sh" ]; then
 			echo "************************************ Building test ROM"
-			mkdir -p ./test/
-			cp ${BUILDDIR}/$repository/mupen64plus-rom/m64p_test_rom.v64 ./test/
+			#mkdir -p ./test/
+			#cp ${BUILDDIR}/$repository/mupen64plus-rom/m64p_test_rom.v64 ./test/
 			continue
 		fi
 	elif  [ "${plugin}" = "ui-console" ]; then
@@ -234,13 +219,17 @@ for component in ${M64P_COMPONENTS}; do
 
 	echo "************************************ Building ${plugin} ${component_type}"
 	
-	if [ "$CLEAN" -gt 0 ]; then
-	"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix clean $@
+	if [ $CLEAN -gt 0 ]; then
+		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix clean $@
 	fi
-	"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix clean $@
 	"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $@
-	"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $@ ${MAKE_INSTALL}
 
+	if "$IAM" == "root" ]; then
+		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $@ ${MAKE_INSTALL} DESTDIR="/usr/bin/"
+	else
+		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $@ ${MAKE_INSTALL} DESTDIR="/usr/local/bin/"
+
+	fi
 
 	mkdir -p ./test/doc
 	for doc in LICENSES README RELEASE; do
