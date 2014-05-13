@@ -225,21 +225,18 @@ for component in ${M64P_COMPONENTS}; do
 	"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $@
 
 	if "$IAM" == "root" ]; then
-		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $@ ${MAKE_INSTALL} DESTDIR="/usr/bin/"
+		if [ "$component_type" = "front-end" ]; then
+			"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $@ ${MAKE_INSTALL} DESTDIR="/usr/bin/"
+		else
+			mkdir -p "/usr/local/lib/mupen64plus"
+			"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $@ ${MAKE_INSTALL} DESTDIR="/usr/lib/mupen64plus"
+		fi
 	else
-		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $@ ${MAKE_INSTALL} DESTDIR="/usr/local/bin/"
-
+		if [ "$component_type" = "front-end" ]; then
+			"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $@ ${MAKE_INSTALL} DESTDIR="/usr/local/bin/"
+		else
+			mkdir -p "/usr/local/lib/mupen64plus"
+			"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $@ ${MAKE_INSTALL} DESTDIR="/usr/local/lib/mupen64plus"
+		fi
 	fi
-
-	mkdir -p ./test/doc
-	for doc in LICENSES README RELEASE; do
-		if [ -e "${BUILDDIR}/$repository/mupen64plus-${component}/${doc}" ]; then
-			cp "${BUILDDIR}/$repository/mupen64plus-${plugin}/${doc}" "./test/doc/${doc}-mupen64plus-${plugin}"
-		fi
-	done
-	for subdoc in gpl-license font-license lgpl-license module-api-versions.txt; do
-		if [ -e "${BUILDDIR}/$repository/mupen64plus-${plugin}/doc/${subdoc}" ]; then
-			cp "${BUILDDIR}/$repository/mupen64plus-${plugin}/doc/${subdoc}" ./test/doc/
-		fi
-	done
 done
