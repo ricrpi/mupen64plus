@@ -1,0 +1,46 @@
+#!/bin/sh
+
+# terminate the script if any commands return a non-zero error code
+set -e
+
+if [ "$1" = "-h" -o "$1" = "--help" ]; then
+	echo ""
+	echo "Script for Developers, so that you can run a command within active repositories:"
+	echo ""
+	echo "Usage:"
+	echo "[Environment Vars] ./allRepos command ..."
+	echo
+	echo "Environment Variable options:"
+	echo ""
+	echo "    PLUGIN_FILE=[defaultList]              File with List of plugins to build"
+	echo ""
+	echo "Examples:"
+	echo ""
+	echo "    ./allRepos git diff --name-only      # Lists modified files in each repository"
+	echo "    ./allRepos git branch                # Prints which branch is selected for each repository"
+	echo ""
+	exit 0
+fi
+
+defaultPluginList="defaultList"
+
+#get file contents, ignore comments, blank lines and replace multiple tabs with single comma
+M64P_COMPONENTS=`cat "$defaultPluginList" | grep -v -e '^#' -e '^$' | cut -d '#' -f 1 | sed -r 's:\t+:,:g'`
+
+for component in ${M64P_COMPONENTS}; do
+	plugin=`echo "${component}" | cut -d , -f 1`
+	repository=`echo "${component}" | cut -d , -f 2`
+	
+	if [ -z "$plugin" ]; then
+		continue
+	fi
+
+	if [ -z "$repository" ]; then
+		repository=$REPO
+	fi
+	
+	echo "************************************ $repository/mupen64plus-$plugin"
+	cd $repository/mupen64plus-$plugin	
+	$@
+	cd ../..	
+done
