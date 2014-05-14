@@ -223,20 +223,4 @@ for component in ${M64P_COMPONENTS}; do
 		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix clean $@
 	fi
 	"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $@
-
-	if "$IAM" == "root" ]; then
-		if [ "$component_type" = "front-end" ]; then
-			"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $@ ${MAKE_INSTALL} DESTDIR="/usr/bin/"
-		else
-			mkdir -p "/usr/local/lib/mupen64plus"
-			"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $@ ${MAKE_INSTALL} DESTDIR="/usr/lib/mupen64plus"
-		fi
-	else
-		if [ "$component_type" = "front-end" ]; then
-			"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $@ ${MAKE_INSTALL} DESTDIR="/usr/local/bin/"
-		else
-			mkdir -p "/usr/local/lib/mupen64plus"
-			"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $@ ${MAKE_INSTALL} DESTDIR="/usr/local/lib/mupen64plus"
-		fi
-	fi
 done
