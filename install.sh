@@ -60,9 +60,19 @@ if [ -z "$REPO" ]; then
 	REPO="mupen64plus"
 fi
 
-#------------------------------- set staic variables  --------------------------------------------
+#-------------------------------------- set API Directory ----------------------------------------
 
-MAKE_INSTALL="PLUGINDIR= SHAREDIR= BINDIR= MANDIR= LIBDIR= INCDIR=api LDCONFIG=true "
+for component in ${M64P_COMPONENTS}; do
+	plugin=`echo "${component}" | cut -d , -f 1`
+	repository=`echo "${component}" | cut -d , -f 2`
+
+	if [ "${plugin}" = "core" ]; then
+		set APIDIR="../../../../$repository/mupen64plus-core/src/api"
+		break
+	fi
+done
+
+#------------------------------- set staic variables  --------------------------------------------
 
 for component in ${M64P_COMPONENTS}; do
 	plugin=`echo "${component}" | cut -d , -f 1`
@@ -86,10 +96,10 @@ for component in ${M64P_COMPONENTS}; do
 	echo "************************************ Installing ${plugin} ${component_type}"
 		
 	if [ "$component_type" = "front-end" ]; then
-		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $@ ${MAKE_INSTALL} DESTDIR="/usr/bin"
+		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $@ COREDIR="/usr/local/lib/"
 	else
 		mkdir -p "/usr/local/lib/mupen64plus"
-		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $@ ${MAKE_INSTALL} DESTDIR="/usr/lib/mupen64plus/"
+		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $@
 	fi
 	
 done

@@ -63,7 +63,7 @@ fi
 #------------------------------- set staic variables  --------------------------------------------
 
 set RASPBERRY_PI=1
-MAKE_INSTALL="PLUGINDIR= SHAREDIR= BINDIR= MANDIR= LIBDIR= INCDIR=api LDCONFIG=true "
+MAKE_INSTALL="PLUGINDIR= SHAREDIR= BINDIR= MANDIR= LIBDIR= INCDIR=api LDCONFIG=true"
 
 #------------------------------- SDL dev libraries --------------------------------------------
 
@@ -122,7 +122,7 @@ if [ 1 -eq 1 ]; then
 	fi
 fi
 
-if [ "$M64P_COMPONENTS_FILE" -eq 1 ]; then
+if [ $M64P_COMPONENTS_FILE -eq 1 ]; then
 	for component in ${M64P_COMPONENTS}; do
 		plugin=`echo "${component}" | cut -d , -f 1`
 		repository=`echo "${component}" | cut -d , -f 2`
@@ -153,16 +153,19 @@ if [ "$M64P_COMPONENTS_FILE" -eq 1 ]; then
 fi
 
 #-------------------------------------- set API Directory ----------------------------------------
-
+if [ $M64P_COMPONENTS_FILE -eq 1 ]; then
 for component in ${M64P_COMPONENTS}; do
 	plugin=`echo "${component}" | cut -d , -f 1`
 	repository=`echo "${component}" | cut -d , -f 2`
 
-	if [ "${plugin}" = "core" ]; then
+	if [ "$plugin" = "core" ]; then
 		set APIDIR="../../../../$repository/mupen64plus-core/src/api"
 		break
 	fi
 done
+else
+set APIDIR="../../../../mupen64plus-core/src/api"
+fi
 
 #-------------------------------------- Change Branch --------------------------------------------
 
@@ -178,6 +181,10 @@ if [ $M64P_COMPONENTS_FILE -eq 1 ]; then
 
 		if [ -z "$branch" ]; then
 			branch="master"
+		fi
+
+		if [ $M64P_COMPONENTS_FILE -eq 0 ]; then
+		repository="."
 		fi
 
 		cd $repository/mupen64plus-${plugin}
@@ -205,16 +212,16 @@ for component in ${M64P_COMPONENTS}; do
 	if [ "${plugin}" = "core" ]; then
 		component_type="library"
 	elif  [ "${plugin}" = "rom" ]; then
-		if [ "$0" = "./build_test.sh" ]; then
-			echo "************************************ Building test ROM"
-			#mkdir -p ./test/
-			#cp ${BUILDDIR}/$repository/mupen64plus-rom/m64p_test_rom.v64 ./test/
-			continue
-		fi
+		continue
+
 	elif  [ "${plugin}" = "ui-console" ]; then
 		component_type="front-end"
 	else
 		component_type="plugin"
+	fi
+
+	if [ $M64P_COMPONENTS_FILE -eq 0 ]; then
+		repository="."
 	fi
 
 	echo "************************************ Building ${plugin} ${component_type}"
@@ -222,5 +229,6 @@ for component in ${M64P_COMPONENTS}; do
 	if [ $CLEAN -gt 0 ]; then
 		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix clean $@
 	fi
-	"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $@
+
+	"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $@ COREDIR="/usr/local/lib/" 
 done
