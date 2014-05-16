@@ -1,24 +1,44 @@
 # This is the list of plugins to be installed by the automated scripts
 
 #plugin name		repository	branch		upstream
+#====================================================================================
 
 core			ricrpi		ric_dev		mupen64plus	# need to merge with master branch
+#core			mupen64plus	master		
 
-#ui-console		ricrpi		master		mupen64plus
+#==================================== front-end =====================================
+
+#ui-console		ricrpi		master		mupen64plus	# optimizations make no perceivable difference
 ui-console		mupen64plus	master		
+
+#==================================== audio =========================================
 
 audio-omx		ricrpi		master		
 audio-sdl		mupen64plus	master				# compiles and works but slower than omx
 
+#==================================== input =========================================
+
 #input-sdl		ricrpi		master		mupen64plus	# optimizations make no perceivable difference
 input-sdl		mupen64plus	master
 
-rsp-hle			ricrpi		master		mupen64plus	# mupen64plus version fails to build jpec.c with -O3
+#==================================== rsp ===========================================
+
+rsp-hle			ricrpi		master		mupen64plus
 #rsp-hle		mupen64plus	master				# mupen64plus version fails to build jpec.c with -O3
-#rsp-cxd4		mupen64plus	master				# unknown compatibility, forked from cxd4
-#rsp-z64		mupen64plus	master				# unknown compatibility
-			
+#rsp-cxd4		mupen64plus	master				# does not compile (-mstackalign not a gcc option)
+#rsp-z64		mupen64plus	master				# compiles but does not work
+	
+#==================================== video =========================================
+		
 video-gles2rice		ricrpi		master
 video-gles2n64		ricrpi		master
+
+#video-rice		mupen64plus	master
+#video-glide64		mupen64plus	master
+#video-glide64mk2	mupen64plus	master
+#video-z64		mupen64plus	master
+#video-arachnoid	mupen64plus	master
+
+#==================================== rom ===========================================
 
 rom			mupen64plus	master
