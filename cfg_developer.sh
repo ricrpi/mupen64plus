@@ -27,8 +27,8 @@ fi
 #get file contents, ignore comments, blank lines and replace multiple tabs with single comma
 M64P_COMPONENTS=`cat "$defaultPluginList" | grep -v -e '^#' -e '^$' | cut -d '#' -f 1 | sed -r 's:\t+:,:g'`
 
-git config --global user.email "$USER"
-git config --global user.name "$EMAIL"
+git config user.email "$EMAIL"
+git config user.name "$USER"
 
 for component in ${M64P_COMPONENTS}; do
 	plugin=`echo "${component}" | cut -d , -f 1`
@@ -44,8 +44,8 @@ for component in ${M64P_COMPONENTS}; do
 	cd $repository/mupen64plus-${plugin}
 	
 	echo "Setting user name and email"
-	git config --global user.email "$USER"
-	git config --global user.name "$EMAIL"
+	git config user.email "$EMAIL"
+	git config user.name "$USER"
 
 	if [ -n "$upstream" ]; then
 		if [ `git remote | grep -c upstream` -eq 0 ]; then
