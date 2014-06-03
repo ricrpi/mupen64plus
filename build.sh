@@ -26,7 +26,7 @@ fi
 
 M64P_COMPONENTS_FILE=0
 defaultPluginList="defaultList"
-
+SDL2="SDL2-2.0.3"
 PATH=$PWD:$PATH
 
 #------------------- set some variables if not specified ----------------------------------------
@@ -64,9 +64,45 @@ fi
 
 set RASPBERRY_PI=1
 MAKE_INSTALL="PLUGINDIR= SHAREDIR= BINDIR= MANDIR= LIBDIR= INCDIR=api LDCONFIG=true"
+GCC_VERSION=4.7
+
+#------------------------------- GCC compiler --------------------------------------------
+
+
+if [ "$IAM" = "root" ]; then
+	if [ ! -e "/usr/bin/gcc-$GCC_VERSION" ]; then
+		echo "************************************ Downloading/Installing GCC $GCC_VERSION"
+		apt-get install gcc-$GCC_VERSION
+	fi
+	if [ ! -e "/usr/bin/g++-$GCC_VERSION" ]; then
+		echo "************************************ Downloading/Installing G++ $GCC_VERSION"
+		apt-get install g++-$GCC_VERSION
+	fi
+else
+	if [ ! -e "/usr/bin/gcc-$GCC_VERSION" ]; then
+		echo "You should install the GCC $GCC_VERSION compiler"
+		echo "Either run this script with sudo/root or run 'apt-get install gcc-$GCC_VERSION'"
+		exit 1
+	fi
+	if [ ! -e "/usr/bin/g++-$GCC_VERSION" ]; then
+		echo "You should install the G++ $GCC_VERSION compiler"
+		echo "Either run this script with sudo/root or run 'apt-get install g++-$GCC_VERSION'"
+		exit 1
+	fi
+fi
+
+if [ -e "/usr/bin/gcc-$GCC_VERSION" ]; then
+	ln -f -s /usr/bin/gcc-$GCC_VERSION gcc
+fi
+
+if [ -e "/usr/bin/g++-$GCC_VERSION" ]; then
+	ln -f -s /usr/bin/g++-$GCC_VERSION g++
+fi
 
 #------------------------------- SDL dev libraries --------------------------------------------
 
+if [ 0 -eq 1 ]; then
+SDL=1.2
 if [ "$IAM" = "root" ]; then
 	if [ ! -e "/usr/bin/sdl-config" ]; then
 		echo "************************************ Downloading/Installing SDL"
@@ -79,33 +115,55 @@ else
 		exit 1
 	fi
 fi
-
-#------------------------------- GCC 4.7 libraries --------------------------------------------
-
+else
+SDL=2
 if [ "$IAM" = "root" ]; then
-	if [ ! -e "/usr/bin/gcc-4.7" ]; then
-		echo "************************************ Downloading/Installing GCC 4.7"
-		apt-get install gcc-4.7
-		apt-get install g++-4.7
+	if [ ! -e "/usr/local/lib/libSDL2.so" ]; then
+		echo "************************************ Downloading/Building/Installing SDL2"
+		wget http://www.libsdl.org/release/$SDL2.tar.gz
+
+		tar -zxf $SDL2.tar.gz
+		cd $SDL2
+		./configure
+		make
+		make install
+		cd ..
 	fi
 else
-	if [ ! -e "/usr/bin/gcc-4.7" ]; then
-		echo "You should install the GCC 4.7 compiler"
-		echo "Either run this script with sudo/root or run 'apt-get install gcc-4.7 g++-4.7'"
+	if [ ! -e "/usr/local/lib/libSDL2.so" ]; then
+		echo "You need to install SDL2 development libraries"
+		echo "Either run this script with sudo/root or run 'sudo wget http://www.libsdl.org/release/$SDL2.tar.gz; tar -zxf $SDL2.tar.gz; cd $SDL2; ./configure; make; make install; cd ..'"
 		exit 1
 	fi
 fi
-
-if [ -e "/usr/bin/gcc-4.7" ]; then
-	if [ ! -e "gcc" ]; then
-		ln -s /usr/bin/gcc-4.7 gcc
-	fi
 fi
 
-if [ -e "/usr/bin/g++-4.7" ]; then
-	if [ ! -e "g++" ]; then
-		ln -s /usr/bin/g++-4.7 g++
+
+#------------------------------- Setup Information to debug problems --------------------------------
+
+if [ 1 -eq 1 ]; then
+	echo "--------------- Setup Information -------------"
+	git --version
+	gcc -v 2>&1 | tail -n 1
+	g++ -v 2>&1 | tail -n 1
+
+	if [ -e "/usr/local/bin/sdl2-config" ]; then
+		echo "Using SDL 2"
+	else
+		if [ -e "/usr/bin/sdl-config" ]; then
+			echo "Using SDL1.2"
+		else
+			echo "Unknown SDL setup"
+		fi
 	fi
+
+	if [ -e "/boot/config.txt" ]; then
+		cat /boot/config.txt | grep "gpu_mem"
+	else
+		uname -a
+	fi
+
+	echo "-----------------------------------------------"
 fi
 
 #------------------------------- Download/Update plugins --------------------------------------------
@@ -113,7 +171,7 @@ fi
 if [ 1 -eq 1 ]; then
 	# update this installer
 	RESULT=`git pull origin`
-	
+
 	if [ "$RESULT" != "Already up-to-date." ]; then
 		echo ""
 		echo "    Installer updated. Please re-run build.sh"
@@ -127,7 +185,7 @@ if [ $M64P_COMPONENTS_FILE -eq 1 ]; then
 		plugin=`echo "${component}" | cut -d , -f 1`
 		repository=`echo "${component}" | cut -d , -f 2`
 		branch=`echo "${component}" | cut -d , -f 3`
-		
+
 		if [ -z "$plugin" ]; then
 			continue
 		fi
