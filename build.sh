@@ -144,8 +144,24 @@ fi
 if [ 1 -eq 1 ]; then
 	echo "--------------- Setup Information -------------"
 	git --version
+
 	gcc -v 2>&1 | tail -n 1
-	g++ -v 2>&1 | tail -n 1
+#	g++ -v 2>&1 | tail -n 1
+	GCC_VERSION=`gcc -v 2>&1 | tail -n 1 | cut -d " " -f 3`
+
+	RESULT=`git log -n 1 | head -n 1`
+	echo "Build script: $RESULT"
+
+	#Check what is being built"
+	RESULT=`git diff --name-only defaultList | wc -l`
+	if [ $RESULT -eq 1 -o -n "$PLUGIN_LIST" ]; then
+		echo "Using Modifed List"
+#		echo "--------------------------"
+#		cat "$defaultPluginList"
+#		echo "--------------------------"
+	else
+		echo "Using DefaultList"
+	fi
 
 	if [ -e "/usr/local/bin/sdl2-config" ]; then
 		echo "Using SDL 2"
@@ -159,8 +175,12 @@ if [ 1 -eq 1 ]; then
 
 	if [ -e "/boot/config.txt" ]; then
 		cat /boot/config.txt | grep "gpu_mem"
-	else
-		uname -a
+	fi
+
+	uname -a
+
+	if [ -e "/etc/issue" ]; then
+		cat /etc/issue
 	fi
 
 	echo "-----------------------------------------------"
@@ -247,7 +267,7 @@ if [ $M64P_COMPONENTS_FILE -eq 1 ]; then
 
 		cd $repository/mupen64plus-${plugin}
 		currentBranch=`git branch | grep [*] | cut -b 3-;`
-		
+
 		if [ ! "$branch" = "$currentBranch" ]; then
 			echo "************************************ Changing branch from ${currentBranch} to ${branch} for mupen64plus-${plugin}"
 			git checkout $branch
@@ -283,10 +303,15 @@ for component in ${M64P_COMPONENTS}; do
 	fi
 
 	echo "************************************ Building ${plugin} ${component_type}"
-	
+
 	if [ $CLEAN -gt 0 ]; then
 		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix clean $@
 	fi
 
-	"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $@ COREDIR="/usr/local/lib/" 
+	if [ `echo "$GCC_VERSION 4.7.3" | awk '{print ($1 < $2)}'` -eq 1 ]; then
+		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $@ COREDIR="/usr/local/lib/" RPIFLAGS=" " 
+	else
+		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $@ COREDIR="/usr/local/lib/" 
+	fi
+
 done
