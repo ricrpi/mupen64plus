@@ -24,14 +24,18 @@ if [ "$1" = "-h" -o "$1" = "--help" ]; then
 	exit 0
 fi
 
-M64P_COMPONENTS_FILE=0
-defaultPluginList="defaultList"
-SDL2="SDL2-2.0.3"
-PATH=$PWD:$PATH
+defaultPluginList="defaultList"	
+SDL2="SDL2-2.0.3"		# SDL Library version
+PATH=$PWD:$PATH			# Add the current directory to $PATH
+
+MEM_REQ=750			# The number of M bytes of memory required to build 
+
 
 #------------------- set some variables if not specified ----------------------------------------
 
 IAM=`whoami`
+M64P_COMPONENTS_FILE=0
+GPU=0
 
 if [ -z "$CLEAN" ]; then
 	CLEAN=1
@@ -144,7 +148,7 @@ fi
 if [ 1 -eq 1 ]; then
 	echo "--------------- Setup Information -------------"
 	git --version
-
+	free -h
 	gcc -v 2>&1 | tail -n 1
 #	g++ -v 2>&1 | tail -n 1
 	GCC_VERSION=`gcc -v 2>&1 | tail -n 1 | cut -d " " -f 3`
@@ -175,6 +179,7 @@ if [ 1 -eq 1 ]; then
 
 	if [ -e "/boot/config.txt" ]; then
 		cat /boot/config.txt | grep "gpu_mem"
+		GPU=`cat /boot/config.txt | grep "gpu_mem" | cut -d "=" -f 2`
 	fi
 
 	uname -a
@@ -276,8 +281,30 @@ if [ $M64P_COMPONENTS_FILE -eq 1 ]; then
 		cd ../..
 	done
 fi
+#--------------------------------------- Check free memory --------------------------------------------
+
+RESULT=`free -m | grep "Mem:" | sed -r 's: +:\t:g' | cut -f 2`
+	
+if [ $RESULT -lt $MEM_REQ ]; then
+	echo "Not enough memory to build"
+
+	#does /etc/dphys-swapfile specify a value?
+	SWAP_RESULT="grep CONF_SWAPSIZE /etc/dphys-swapfile"
+	REQ=`expr $MEM_REQ - $RESULT`
+
+	if [ `echo "$SWAP_RESULT" | cut -c1 ` = "#" ]; then
+		
+		echo "Please enable CONF_SWAPSIZE=$REQ in /etc/dphys-swapfile and run 'sudo dphys-swapfile setup; sudo reboot'"
+	else
+		echo "Please set CONF_SWAPSIZE to >= $REQ in /etc/dphys-swapfile and run 'sudo dphys-swapfile setup; sudo reboot'"
+	fi	
+	
+	exit
+fi 
 
 #--------------------------------------- Build plugins --------------------------------------------
+
+	
 
 for component in ${M64P_COMPONENTS}; do
 	plugin=`echo "${component}" | cut -d , -f 1`
