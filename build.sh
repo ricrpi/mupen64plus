@@ -283,8 +283,8 @@ if [ $M64P_COMPONENTS_FILE -eq 1 ]; then
 fi
 #--------------------------------------- Check free memory --------------------------------------------
 
-RESULT=`free -m | grep "Mem:" | sed -r 's: +:\t:g' | cut -f 2`
-	
+RESULT=`free -m -t | grep "Total:" | sed -r 's: +:\t:g' | cut -f 2`
+
 if [ $RESULT -lt $MEM_REQ ]; then
 	echo "Not enough memory to build"
 
@@ -293,18 +293,15 @@ if [ $RESULT -lt $MEM_REQ ]; then
 	REQ=`expr $MEM_REQ - $RESULT`
 
 	if [ `echo "$SWAP_RESULT" | cut -c1 ` = "#" ]; then
-		
 		echo "Please enable CONF_SWAPSIZE=$REQ in /etc/dphys-swapfile and run 'sudo dphys-swapfile setup; sudo reboot'"
 	else
 		echo "Please set CONF_SWAPSIZE to >= $REQ in /etc/dphys-swapfile and run 'sudo dphys-swapfile setup; sudo reboot'"
-	fi	
-	
+	fi
+
 	exit
-fi 
+fi
 
 #--------------------------------------- Build plugins --------------------------------------------
-
-	
 
 for component in ${M64P_COMPONENTS}; do
 	plugin=`echo "${component}" | cut -d , -f 1`
