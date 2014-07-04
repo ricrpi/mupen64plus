@@ -105,8 +105,8 @@ fi
 
 #------------------------------- SDL dev libraries --------------------------------------------
 
-if [ 0 -eq 1 ]; then
-SDL=1.2
+#if [ 0 -eq 1 ]; then
+#SDL=1.2
 if [ "$IAM" = "root" ]; then
 	if [ ! -e "/usr/bin/sdl-config" ]; then
 		echo "************************************ Downloading/Installing SDL"
@@ -119,7 +119,7 @@ else
 		exit 1
 	fi
 fi
-else
+#else
 SDL=2
 if [ "$IAM" = "root" ]; then
 	if [ ! -e "/usr/local/lib/libSDL2.so" ]; then
@@ -140,7 +140,7 @@ else
 		exit 1
 	fi
 fi
-fi
+#fi
 
 
 #------------------------------- Setup Information to debug problems --------------------------------
