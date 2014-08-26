@@ -1,0 +1,36 @@
+# This is the list of plugins to be installed by the automated scripts
+
+#plugin name		repository	branch		upstream
+#====================================================================================
+
+core			mupen64plus	master		
+
+#==================================== front-end =====================================
+
+ui-console		mupen64plus	master		
+
+#==================================== audio =========================================
+
+audio-sdl		mupen64plus	master
+
+#==================================== input =========================================
+
+input-sdl		mupen64plus	master
+
+#==================================== rsp ===========================================
+
+rsp-hle			mupen64plus	master				
+rsp-cxd4		mupen64plus	master
+rsp-z64			mupen64plus	master		
+	
+#==================================== video =========================================
+		
+video-rice		mupen64plus	master
+video-glide64		mupen64plus	master
+video-glide64mk2	mupen64plus	master
+video-z64		mupen64plus	master
+#video-arachnoid	mupen64plus	master
+
+#==================================== rom ===========================================
+
+rom			mupen64plus	master
