@@ -81,7 +81,7 @@ if [ -z "$BUILDDIR" ]; then
 	BUILDDIR="."
 fi
 
-if [ ! -d "$BUILDDIR"]; then
+if [ ! -d "$BUILDDIR" ]; then
 	mkdir "$BUILDDIR"
 fi
 
