@@ -433,7 +433,6 @@ for component in ${M64P_COMPONENTS}; do
 	echo "************************************ Building ${plugin} ${component_type}"
 
 	if [ "$CLEAN" = "1" ]; then
-		`touch "${BUILDDIR}"/$repository/mupen64plus-ui-console/src/core_interface.c`
 		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix clean $@
 	fi
 
