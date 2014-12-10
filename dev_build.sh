@@ -10,5 +10,5 @@ if [ -z "$COREDIR" ]; then
 COREDIR="./"
 fi
 
-DEV=$DEV CLEAN=$CLEAN COREDIR=$CORDIR ./build.sh
+DEV=$DEV CLEAN=$CLEAN COREDIR=$COREDIR ./build.sh
 

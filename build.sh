@@ -103,8 +103,9 @@ if [ -z "${M64P_COMPONENTS}" ]; then
 fi
 
 if [ -z "${BUILDDIR}" ]; then
-	BUILDDIR="."
+	BUILDDIR=`pwd`
 fi
+
 
 if [ ! -d "${BUILDDIR}" ]; then
 	mkdir "${BUILDDIR}"
@@ -167,7 +168,7 @@ fi
 
 if [ "$USE_SDL2" = "1" ]; then
 
-	if [ "$MAKE_SDL2" = "1" ] || [ ! -e "/usr/local/lib/libSDL2.so" ]; then
+	if [ ! -e "/usr/local/lib/libSDL2.so" ]; then
 		echo "************************************ Downloading SDL2"
 
 		pushd "${BUILDDIR}"
@@ -181,13 +182,13 @@ if [ "$USE_SDL2" = "1" ]; then
 
 	pushd ${BUILDDIR}/${SDL2}
 
-SDL_OLD_CFG=""
+	SDL_OLD_CFG=""
 
 	if [ -e "config.log" ]; then
 		SDL_OLD_CFG=`head config.log | grep  "\./configure" | cut -d " " -f 5-`
 	fi
 
-	if [ "$SDL_OLD_CFG" != "$SDL_CFG" ]; then
+	if [ "$MAKE_SDL2" = "1" ] || [ "$SDL_OLD_CFG" != "$SDL_CFG" ]; then
 		echo "************************************ Configuring/Build/Install SDL2"
 		echo "./configure $SDL_CFG"
 
@@ -202,7 +203,7 @@ SDL_OLD_CFG=""
 			exit 1
 		fi
 	fi
-	
+
 	popd
 
 	# Override mupen64-core Makefile SDL
@@ -279,7 +280,7 @@ fi
 
 #------------------------------- Download/Update plugins --------------------------------------------
 
-if [ 1 -eq 1 ]; then
+if [ "$DEV" =  "0" ]; then
 	# update this installer
 	RESULT=`git pull origin`
 
@@ -405,8 +406,14 @@ fi
 #--------------------------------------- Build plugins --------------------------------------------
 
 for component in ${M64P_COMPONENTS}; do
-	plugin=`echo "${component}" | cut -d , -f 1`
-	repository=`echo "${component}" | cut -d , -f 2`
+
+	if [ $M64P_COMPONENTS_FILE -eq 1 ]; then
+		plugin=`echo "${component}" | cut -d , -f 1`
+		repository=`echo "${component}" | cut -d , -f 2`
+	else
+		plugin=$component
+		repository=""
+	fi
 
 	if [ -z "$plugin" ]; then
 		continue
@@ -423,15 +430,16 @@ for component in ${M64P_COMPONENTS}; do
 		component_type="plugin"
 	fi
 
-	if [ $M64P_COMPONENTS_FILE -eq 0 ]; then
-		repository="."
-	fi
-
 	echo "************************************ Building ${plugin} ${component_type}"
 
-	#if this is the console then do a clean so that COREDIR will be compiled correctly
-	if [ "$CLEAN" = "1" ] || [ "${plugin}" = "ui-console" ]; then
+	if [ "$CLEAN" = "1" ]; then
+		`touch "${BUILDDIR}"/$repository/mupen64plus-ui-console/src/core_interface.c`
 		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix clean $@
+	fi
+
+	#if this is the console then do a clean so that COREDIR will be compiled correctly
+	if [ "$CLEAN" = "0" ] && [ "${plugin}" = "ui-console" ]; then
+		`touch "${BUILDDIR}"/$repository/mupen64plus-ui-console/src/core_interface.c`
 	fi
 
 	# In ricrpi/mupen64plus-core we cannot compile with -03 on pi however some 03 optimizations can be applied i.e. 
@@ -445,6 +453,6 @@ for component in ${M64P_COMPONENTS}; do
 
 	# dev_build can install into test folder
 	if [ "$DEV" = "1" ]; then
-		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $@ ${MAKE_INSTALL} DESTDIR="$(pwd)/test/"
+		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $@ ${MAKE_INSTALL} DESTDIR="${BUILDDIR}/test"
 	fi
 done
