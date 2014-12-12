@@ -99,7 +99,7 @@ if [ -z "${M64P_COMPONENTS}" ]; then
 	M64P_COMPONENTS_FILE=1
 
 	#get file contents, ignore comments, blank lines and replace multiple tabs with single comma
-	M64P_COMPONENTS=`cat "${defaultPluginList}" | grep -v -e '^#' -e '^$' | cut -d '#' -f 1 | sed -r 's:\t+:,:g'`
+	M64P_COMPONENTS=`cat "${defaultPluginList}" | grep -v -e '^#' -e '^$' | cut -d '#' -f 1 | sed -r 's:\t+:,:g' | sed -r 's:\ +:,:g'`
 fi
 
 if [ -z "${BUILDDIR}" ]; then
@@ -292,7 +292,7 @@ if [ $M64P_COMPONENTS_FILE -eq 1 ]; then
 		plugin=`echo "${component}" | cut -d , -f 1`
 		repository=`echo "${component}" | cut -d , -f 2`
 		branch=`echo "${component}" | cut -d , -f 3`
-
+		
 		if [ -z "$plugin" ]; then
 			continue
 		fi
@@ -304,7 +304,7 @@ if [ $M64P_COMPONENTS_FILE -eq 1 ]; then
 		if [ -z "$branch" ]; then
 			branch="master"
 		fi
-
+	
 		if [ ! -e "${BUILDDIR}/$repository/mupen64plus-${plugin}" ]; then
 			echo "************************************ Downloading ${plugin} from ${repository} to ${BUILDDIR}/$repository/mupen64plus-${plugin}"
 			git clone https://github.com/${repository}/mupen64plus-${plugin} ${BUILDDIR}/$repository/mupen64plus-${plugin}
@@ -402,12 +402,15 @@ fi
 
 for component in ${M64P_COMPONENTS}; do
 
+
 	if [ $M64P_COMPONENTS_FILE -eq 1 ]; then
 		plugin=`echo "${component}" | cut -d , -f 1`
 		repository=`echo "${component}" | cut -d , -f 2`
+		flags=`echo "${component}" | cut -d , -f 5- | sed -r 's:,:\ :g'`
 	else
 		plugin=$component
 		repository=""
+		flags=""
 	fi
 
 	if [ -z "$plugin" ]; then
@@ -440,9 +443,9 @@ for component in ${M64P_COMPONENTS}; do
 	# RPIFLAGS ?= -fgcse-after-reload -finline-functions -fipa-cp-clone -funswitch-loops -fpredictive-commoning -ftree-loop-distribute-patterns -ftree-vectorize
 	# These break in versions < 4.7.3 so override RPIFLAGS
 	if [ `echo "$GCC 4.7.3" | awk '{print ($1 < $2)}'` -eq 1 ]; then
-		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $@ COREDIR=$COREDIR RPIFLAGS=" " SDL_CFLAGS="$SDL_CFLAGS" SDL_LDLIBS="$SDL_LDLIBS"
+		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $@ $flags COREDIR=$COREDIR RPIFLAGS=" " SDL_CFLAGS="$SDL_CFLAGS" SDL_LDLIBS="$SDL_LDLIBS"
 	else
-		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $@ COREDIR=$COREDIR SDL_CFLAGS="$SDL_CFLAGS" SDL_LDLIBS="$SDL_LDLIBS"
+		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $@ $flags COREDIR=$COREDIR SDL_CFLAGS="$SDL_CFLAGS" SDL_LDLIBS="$SDL_LDLIBS"
 	fi
 
 	# dev_build can install into test folder

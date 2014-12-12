@@ -1,15 +1,17 @@
 # This is the list of plugins to be installed by the automated scripts
 
-#plugin name		repository	branch		upstream
+#plugin name		repository	branch		upstream	flags
 #====================================================================================
 
-core			ricrpi		ric_dev		mupen64plus	# need to merge with master branch
-#core			mupen64plus	master		
+core			ricrpi		ric_dev		mupen64plus	USE_GLES=1 VFP=1 # need to merge with master branch
+
+
+#core			mupen64plus	master		,
 
 #==================================== front-end =====================================
 
 #ui-console		ricrpi		master		mupen64plus	# optimizations make no perceivable difference
-ui-console		mupen64plus	master		
+ui-console		mupen64plus	master		,
 
 #==================================== audio =========================================
 
