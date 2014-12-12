@@ -167,19 +167,14 @@ fi
 #------------------------------- SDL dev libraries --------------------------------------------
 
 if [ "$USE_SDL2" = "1" ]; then
-
-	if [ ! -e "/usr/local/lib/libSDL2.so" ]; then
-		echo "************************************ Downloading SDL2"
-
+	if [ ! -e "${BUILDDIR}/${SDL2}" ]; then
 		pushd "${BUILDDIR}"
-
-		if [ ! -e "${BUILDDIR}/${SDL2}" ]; then
-			wget http://www.libsdl.org/release/$SDL2.tar.gz
-			tar -zxf $SDL2.tar.gz
-		fi
+		echo "************************************ Downloading SDL2"
+		wget http://www.libsdl.org/release/$SDL2.tar.gz
+		tar -zxf $SDL2.tar.gz
 		popd
 	fi
-
+		
 	pushd ${BUILDDIR}/${SDL2}
 
 	SDL_OLD_CFG=""
