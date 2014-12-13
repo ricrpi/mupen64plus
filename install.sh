@@ -73,6 +73,7 @@ done
 for component in ${M64P_COMPONENTS}; do
 	plugin=`echo "${component}" | cut -d , -f 1`
 	repository=`echo "${component}" | cut -d , -f 2`
+	flags=`echo "${component}" | cut -d , -f 5- | sed -r 's:,:\ :g'`
 
 	if [ -z "$plugin" ]; then
 		continue
