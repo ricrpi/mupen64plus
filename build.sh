@@ -6,7 +6,7 @@ set -e
 if [ "$1" = "-h" -o "$1" = "--help" ]; then
 	echo "Mupen64plus installer for the Raspberry PI"
 	echo "Usage:"
-	echo "[Environment Vars] ./buid_test.sh [makefile targets]"
+	echo "[Environment Vars] ./buid.sh [defaultList]"
 	echo
 	echo "Environment Variable options:"
 	echo ""
@@ -16,14 +16,12 @@ if [ "$1" = "-h" -o "$1" = "--help" ]; then
 	echo "    GCC=[4.7]                    Version of gcc to use"
 	echo "    MAKE=[make]                  Make Utility to use"
 	echo "    MAKE_SDL2=[0]                Force building of SDL2 library"
-	echo "    M64P_COMPONENTS=             The list of components to download and build"
+	echo "    COMP=                        The list of components to download and build"
 	echo "                                 The default is to read ./pluginList. "
 	echo "                                 One can specify the plugin names e.g. 'core'."
 	echo "                                 This will override automatic changing of the branch"
-	echo "    PLUGIN_FILE=[defaultList]    File with List of plugins to build"
 	echo "    BUILDDIR=[./] | PREFIX=[./]  Directory to download and build plugins in"
-	echo "    REPO=[mupen64plus]           Default repository on https://github.com"
-
+	echo "    REPO=[mupen64plus]           Default repository from https://github.com"
 	echo ""
 
 	exit 0
@@ -65,7 +63,6 @@ CLEAN="1"
 fi
 
 IAM=`whoami`
-M64P_COMPONENTS_FILE=0
 GPU=0
 MAKE_INSTALL="PLUGINDIR= SHAREDIR= BINDIR= MANDIR= LIBDIR= INCDIR=api LDCONFIG=true"
 PATH=$PWD:$PATH			# Add the current directory to $PATH so we can override gcc/g++ version
@@ -91,16 +88,17 @@ if [ -z "$MAKE" ]; then
 	MAKE=make
 fi
 
-if [ -z "${M64P_COMPONENTS}" ]; then
-	if [ -n "${PLUGIN_FILE}" ]; then
-		defaultPluginList="${PLUGIN_FILE}"
-	fi
-
-	M64P_COMPONENTS_FILE=1
-
-	#get file contents, ignore comments, blank lines and replace multiple tabs with single comma
-	M64P_COMPONENTS=`cat "${defaultPluginList}" | grep -v -e '^#' -e '^$' | cut -d '#' -f 1 | sed -r 's:\t+:,:g' | sed -r 's:\ +:,:g'`
+if [ -n "$1" ]; then
+	defaultPluginList="$1"
 fi
+
+if [ ! -e "$defaultPluginList" ]; then
+	echo "Cannot find file: $defaultPluginList"
+	exit 
+fi
+
+#get file contents, ignore comments, blank lines and replace multiple tabs with single comma
+M64P_COMPONENTS=`cat "${defaultPluginList}" | grep -v -e '^#' -e '^$' | cut -d '#' -f 1 | sed -r 's:\t+:,:g' | sed -r 's:\ +:,:g'`
 
 if [ -z "${BUILDDIR}" ]; then
 	BUILDDIR=`pwd`
@@ -287,96 +285,100 @@ if [ "$DEV" =  "0" ]; then
 	fi
 fi
 
-if [ $M64P_COMPONENTS_FILE -eq 1 ]; then
-	for component in ${M64P_COMPONENTS}; do
-		plugin=`echo "${component}" | cut -d , -f 1`
-		repository=`echo "${component}" | cut -d , -f 2`
-		branch=`echo "${component}" | cut -d , -f 3`
-		
-		if [ -z "$plugin" ]; then
+for component in ${M64P_COMPONENTS}; do
+	plugin=`echo "${component}" | cut -d , -f 1`
+	repository=`echo "${component}" | cut -d , -f 2`
+	branch=`echo "${component}" | cut -d , -f 3`
+	
+	if [ -z "$plugin" ]; then
+		continue
+	fi
+
+	#If COMP is set and does not contain the plugin name then skip building it
+	if [ -n "$COMP" ]; then
+		if [[ "$COMP" != *"$plugin"* ]]; then
 			continue
 		fi
+	fi
 
-		if [ -z "$repository" ]; then
-			repository=$REPO
-		fi
+	if [ -z "$repository" ]; then
+		repository=$REPO
+	fi
 
-		if [ -z "$branch" ]; then
-			branch="master"
-		fi
-	
-		if [ ! -e "${BUILDDIR}/$repository/mupen64plus-${plugin}" ]; then
-			echo "************************************ Downloading ${plugin} from ${repository} to ${BUILDDIR}/$repository/mupen64plus-${plugin}"
-			git clone https://github.com/${repository}/mupen64plus-${plugin} ${BUILDDIR}/$repository/mupen64plus-${plugin}
-		else
-			if [ "$DEV" = "0" ]; then
-				pushd "${BUILDDIR}/$repository/mupen64plus-$plugin"
-				echo "checking $plugin from $repository is up-to-date"
-				echo `git pull origin $branch `
-				popd
-			fi
-		fi
+	if [ -z "$branch" ]; then
+		branch="master"
+	fi
 
-		if [ -n "$upstream" ] && [ "$DEV" = "1" ]; then
-                       	pushd ${BUILDDIR}/$repository/mupen64plus-$plugin
-			if [ `git remote | grep upstream` = "" ]; then
-                        	echo "Setting upstream remote on repository"
-                        	git remote add upstream https://github.com/$upstream/mupen64plus-$plugin
-				popd
-			fi
-                        git fetch upstream
-                   	popd
-                fi
-	done
-fi
+	if [ ! -e "${BUILDDIR}/$repository/mupen64plus-${plugin}" ]; then
+		echo "************************************ Downloading ${plugin} from ${repository} to ${BUILDDIR}/$repository/mupen64plus-${plugin}"
+		git clone https://github.com/${repository}/mupen64plus-${plugin} ${BUILDDIR}/$repository/mupen64plus-${plugin}
+	else
+		if [ "$DEV" = "0" ]; then
+			pushd "${BUILDDIR}/$repository/mupen64plus-$plugin"
+			echo "checking $plugin from $repository is up-to-date"
+			echo `git pull origin $branch `
+			popd
+		fi
+	fi
+
+	if [ -n "$upstream" ] && [ "$DEV" = "1" ]; then
+               	pushd ${BUILDDIR}/$repository/mupen64plus-$plugin
+		if [ `git remote | grep upstream` = "" ]; then
+                	echo "Setting upstream remote on repository"
+                	git remote add upstream https://github.com/$upstream/mupen64plus-$plugin
+			popd
+		fi
+                git fetch upstream
+           	popd
+        fi
+done
 
 #-------------------------------------- set API Directory ----------------------------------------
-if [ $M64P_COMPONENTS_FILE -eq 1 ]; then
-	for component in ${M64P_COMPONENTS}; do
-		plugin=`echo "${component}" | cut -d , -f 1`
-		repository=`echo "${component}" | cut -d , -f 2`
 
-		if [ "$plugin" = "core" ]; then
-			set APIDIR="../../../../$repository/mupen64plus-core/src/api"
-			break
-		fi
-	done
-else
-	set APIDIR="../../../../mupen64plus-core/src/api"
-fi
+for component in ${M64P_COMPONENTS}; do
+	plugin=`echo "${component}" | cut -d , -f 1`
+	repository=`echo "${component}" | cut -d , -f 2`
+
+	if [ "$plugin" = "core" ]; then
+		set APIDIR="../../../../$repository/mupen64plus-core/src/api"
+		break
+	fi
+done
 
 #-------------------------------------- Change Branch --------------------------------------------
 
-if [ $M64P_COMPONENTS_FILE -eq 1 ]; then
-	for component in ${M64P_COMPONENTS}; do
-		plugin=`echo "${component}" | cut -d , -f 1`
-		repository=`echo "${component}" | cut -d , -f 2`
-		branch=`echo "${component}" | cut -d , -f 3`
+for component in ${M64P_COMPONENTS}; do
+	plugin=`echo "${component}" | cut -d , -f 1`
+	repository=`echo "${component}" | cut -d , -f 2`
+	branch=`echo "${component}" | cut -d , -f 3`
 
-		if [ -z "$plugin" ]; then
+	if [ -z "$plugin" ]; then
+		continue
+	fi
+
+	#If COMP is set and does not contain the plugin name then skip building it
+	if [ -n "$COMP" ]; then
+		if [[ "$COMP" != *"$plugin"* ]]; then
 			continue
 		fi
+	fi
 
-		if [ -z "$branch" ]; then
-			branch="master"
+	if [ -z "$branch" ]; then
+		branch="master"
+	fi
+
+	if [ "$DEV" = "0" ]; then
+		pushd "${BUILDDIR}/$repository/mupen64plus-${plugin}"
+
+		currentBranch=`git branch | grep [*] | cut -b 3-;`
+		if [ ! "$branch" = "$currentBranch" ]; then
+			echo "************************************ Changing branch from ${currentBranch} to ${branch} for mupen64plus-${plugin}"
+			git checkout $branch
 		fi
+		popd
+	fi
+done
 
-		if [ "$M64P_COMPONENTS_FILE" = "0" ]; then
-		repository="."
-		fi
-
-		if [ "$DEV" = "0" ]; then
-			pushd "${BUILDDIR}/$repository/mupen64plus-${plugin}"
-			currentBranch=`git branch | grep [*] | cut -b 3-;`
-
-			if [ ! "$branch" = "$currentBranch" ]; then
-				echo "************************************ Changing branch from ${currentBranch} to ${branch} for mupen64plus-${plugin}"
-				git checkout $branch
-			fi
-			popd
-		fi
-	done
-fi
 #--------------------------------------- Check free memory --------------------------------------------
 
 RESULT=`free -m -t | grep "Total:" | sed -r 's: +:\t:g' | cut -f 2`
@@ -401,20 +403,19 @@ fi
 #--------------------------------------- Build plugins --------------------------------------------
 
 for component in ${M64P_COMPONENTS}; do
-
-
-	if [ $M64P_COMPONENTS_FILE -eq 1 ]; then
-		plugin=`echo "${component}" | cut -d , -f 1`
-		repository=`echo "${component}" | cut -d , -f 2`
-		flags=`echo "${component}" | cut -d , -f 5- | sed -r 's:,:\ :g'`
-	else
-		plugin=$component
-		repository=""
-		flags=""
-	fi
+	plugin=`echo "${component}" | cut -d , -f 1`
+	repository=`echo "${component}" | cut -d , -f 2`
+	flags=`echo "${component}" | cut -d , -f 5- | sed -r 's:,:\ :g'`
 
 	if [ -z "$plugin" ]; then
 		continue
+	fi
+
+	#If COMP is set and does not contain the plugin name then skip building it
+	if [ -n "$COMP" ]; then
+		if [[ "$COMP" != *"$plugin"* ]]; then
+			continue
+		fi
 	fi
 
 	if [ "${plugin}" = "core" ]; then
