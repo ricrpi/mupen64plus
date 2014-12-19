@@ -3,12 +3,6 @@ mupen64plus-install
 
 A set of utilities for automatically installing mupen64plus on the Raspberry PI
 
-Before installation:
-Set the GPU memory to 64mb in raspi-config.
-
-Set CONF_SWAPSIZE to 512 in /etc/dphys-swapfile and run 'sudo dphys-swapfile setup; sudo reboot'
-
-
 Users should run the following to install:
 git clone https://github.com/ricrpi/mupen64plus
 cd mupen64plus
