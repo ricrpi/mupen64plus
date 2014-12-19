@@ -15,13 +15,21 @@ if [ "$1" = "-h" -o "$1" = "--help" ]; then
 	echo "    DEV=[0]                      Development build - installs into ./test"
 	echo "    GCC=[4.7]                    Version of gcc to use"
 	echo "    MAKE=[make]                  Make Utility to use"
-	echo "    MAKE_SDL2=[0]                Force building of SDL2 library"
 	echo "    COMP=                        The list of components to download and build"
 	echo "                                 The default is to read ./pluginList. "
 	echo "                                 One can specify the plugin names e.g. 'core'."
 	echo "                                 This will override automatic changing of the branch"
 	echo "    BUILDDIR=[./] | PREFIX=[./]  Directory to download and build plugins in"
 	echo "    REPO=[mupen64plus]           Default repository from https://github.com"
+	echo "    CLEAN_SDL2=[0]               Clean SDL2 build"
+	echo "    X11=[0|1|2]                  X11 / SDL support:"
+	echo "                                 0 = if SDL already installed then use its config"
+	echo "                                     else build with no X11 support"
+	echo "                                 1 = force build with X11 support "
+	echo "                                     - mupen64plus must always be run with X"
+	echo "                                 2 = force build with no X11 support"
+	echo "                                     - mupen64plus runs slightly faster"
+	echo "                                 NOTE: running script as root may update SDL libs"
 	echo ""
 
 	exit 0
@@ -34,7 +42,7 @@ defaultPluginList="defaultList"
 MEM_REQ=750			# The number of M bytes of memory required to build
 USE_SDL2=1			# Use SDL2?
 SDL2="SDL2-2.0.3"		# SDL Library version
-SDL_CFG="--disable-video-opengl --disable-video-x11"
+SDL_CFG="--disable-video-opengl "
 
 #------------ Defaults -----------------------------------------------------------
 
@@ -60,6 +68,17 @@ fi
 
 if [ -z "$CLEAN" ]; then
 CLEAN="1"
+fi
+
+if [ -z "$X11" ]; then
+X11="0"
+fi
+
+
+if [ "$X11" == "1" ]; then
+SDL_CFG="$SDL_CFG --enable-video-x11 "
+else
+SDL_CFG="$SDL_CFG --disable-video-x11 "
 fi
 
 IAM=`whoami`
@@ -165,44 +184,109 @@ fi
 #------------------------------- SDL dev libraries --------------------------------------------
 
 if [ "$USE_SDL2" = "1" ]; then
-	if [ ! -e "${BUILDDIR}/${SDL2}" ]; then
+	DOWNLOAD_SDL2=1
+	BUILD_SDL2=1
+
+	# check existing installation
+	if [ -e "/usr/local/include/SDL2/SDL_config.h" ]; then
+		set +e
+		SDL_VIDEO_ES2=`grep -c "#define SDL_VIDEO_OPENGL_ES2\ 1" /usr/local/include/SDL2/SDL_config.h`
+		SDL_VIDEO_X11=`grep -c "#define SDL_VIDEO_DRIVER_X11\ 1" /usr/local/include/SDL2/SDL_config.h`
+		set -e
+
+		#if SDL was configured with GLES V2 support
+		if [ "$SDL_VIDEO_ES2" != "" ]; then
+			BUILD_SDL2=0
+		fi
+		
+		if [ "$X11" == "1" ] && [ "$SDL_VIDEO_X11" != "1" ]; then
+			BUILD_SDL2=1
+		fi 
+
+		if [ "$X11" == "2" ] && [ "$SDL_VIDEO_X11" != "0" ]; then
+			BUILD_SDL2=1
+		fi
+	fi
+
+	if [ -e "${BUILDDIR}/${SDL2}" ]; then
+		DOWNLOAD_SDL2=0
+	fi
+	
+	if [ "$BUILD_SDL2" == "1" ] && [ "$DOWNLOAD_SDL2" = "1" ]; then
 		pushd "${BUILDDIR}"
 		echo "************************************ Downloading SDL2"
 		wget http://www.libsdl.org/release/$SDL2.tar.gz
 		tar -zxf $SDL2.tar.gz
 		popd
 	fi
+
+	if [ "$BUILD_SDL2" == "1" ]; then	
+		pushd ${BUILDDIR}/${SDL2}
+
+		if [ -e "Makefile" ] && [ "$CLEAN_SDL2" = "1" ]; then
+			echo "************************************ Cleaning SDL2 Source"
+			make clean
+			make distclean
+		fi
+
 		
-	pushd ${BUILDDIR}/${SDL2}
+		CONFIGURE_SDL2=1
 
-	SDL_OLD_CFG=""
+		#check to see if local build is configured correctly. A make distclean will remove config.status but not SDL_config.h
+		if [ -e "include/SDL_config.h" ] && [ -e "config.status" ]; then
+			set +e
+			SDL_VIDEO_ES2=`grep -c "#define SDL_VIDEO_OPENGL_ES2\ 1" include/SDL_config.h`
+			SDL_VIDEO_X11=`grep -c "#define SDL_VIDEO_DRIVER_X11\ 1" include/SDL_config.h`
+			set -e
+			
+			#if SDL was configured with GLES V2 support
+			if [ "$SDL_VIDEO_ES2" != "" ]; then
+				CONFIGURE_SDL2=0
+			fi
+		
+			if [ "$X11" == "1" ] && [ "$SDL_VIDEO_X11" != "1" ]; then
+				CONFIGURE_SDL2=1
+			fi
+			if [ "$X11" == "2" ] && [ "$SDL_VIDEO_X11" != "0" ]; then
+				CONFIGURE_SDL2=1
+			fi
+		fi
 
-	if [ -e "config.log" ]; then
-		SDL_OLD_CFG=`head config.log | grep  "\./configure" | cut -d " " -f 5-`
-	fi
+		if [ "$CONFIGURE_SDL2" == "1" ]; then
+			echo "************************************ Configuring SDL2"
+			echo "./configure $SDL_CFG"
+			./configure $SDL_CFG
+		fi
 
-	if [ "$MAKE_SDL2" = "1" ] || [ "$SDL_OLD_CFG" != "$SDL_CFG" ]; then
-		echo "************************************ Configuring/Build/Install SDL2"
-		echo "./configure $SDL_CFG"
-
-		./configure $SDL_CFG
-		make
+		# Check to see if previous build was done before configure.
+		# This should save users some time if the script was run without root and failed to install
+		if [ -e "${BUILDDIR}/${SDL2}/build/.libs/libSDL2.so" ]; then
+			if [ `stat -c %Y "${BUILDDIR}/${SDL2}/build/.libs/libSDL2.so"` -lt `stat -c %Y "${BUILDDIR}/${SDL2}/config.status"` ]; then
+				echo "************************************ Building SDL2"
+				make
+			fi
+		else
+			echo "************************************ Building SDL2"
+			make
+		fi
 
 		if [ "$IAM" = "root" ]; then
+			echo "************************************ Install SDL2"
 			make install
 		else
 			echo "You need to install SDL2 development libraries"
 			echo "Either run this script with sudo/root or run 'pushd ${BUILDDIR}/$SDL2; sudo make install; popd'"
 			exit 1
 		fi
+		popd
 	fi
 
-	popd
-
-	# Override mupen64-core Makefile SDL
+	# we could statically link by using the following:
+	#SDL_CFLAGS="-I${BUILDDIR}/${SDL2}/include -I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux -D_REENTRANT "
+	#SDL_LDLIBS="${BUILDDIR}/${SDL2}/build/.libs/libSDL2.a -Wl,-rpath,/usr/local/lib -lpthread "
 	SDL_CFLAGS=`sdl2-config --cflags`
   	SDL_LDLIBS=`sdl2-config --libs`
-else
+  else
 	if [ "$IAM" = "root" ]; then
 		if [ ! -e "/usr/bin/sdl-config" ]; then
 			echo "************************************ Downloading/Installing SDL"
