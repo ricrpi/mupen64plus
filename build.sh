@@ -381,16 +381,19 @@ done
 
 #--------------------------------------- Check free memory --------------------------------------------
 
-RESULT=`free -m -t | grep "Total:" | sed -r 's: +:\t:g' | cut -f 2`
+# maybe we should test amount of memory being used?
+MEM_TOTAL=`free -m -t | grep "Total:" | sed -r 's: +:\t:g' | cut -f 2`
+MEM_MEM=`free -m | grep "Mem:" | sed -r 's: +:\t:g' | cut -f 2`
+#MEM_TOTAL_FREE=`free -m -t | grep "Total:" | sed -r 's: +:\t:g' | cut -f 4`
 
-if [ $RESULT -lt $MEM_REQ ]; then
+if [ $MEM_TOTAL -lt $MEM_REQ ]; then
 	echo "Not enough memory to build"
 
 	#does /etc/dphys-swapfile specify a value?
 	if [ -e "/etc/dphys-swapfile" ]; then
 		SWAP_RESULT="grep CONF_SWAPSIZE /etc/dphys-swapfile"
-		REQ=`expr $MEM_REQ - $RESULT`
-
+		REQ=`expr $MEM_REQ - $MEM_MEM`
+		
 		if [ `echo "$SWAP_RESULT" | cut -c1 ` = "#" ]; then
 			echo "Please enable CONF_SWAPSIZE=$REQ in /etc/dphys-swapfile and run 'sudo dphys-swapfile setup; sudo reboot'"
 		else
