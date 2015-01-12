@@ -335,15 +335,22 @@ done
 
 #-------------------------------------- set API Directory ----------------------------------------
 
-for component in ${M64P_COMPONENTS}; do
-	plugin=`echo "${component}" | cut -d , -f 1`
-	repository=`echo "${component}" | cut -d , -f 2`
+if [ -z "$APIDIR" ]; then
+	for component in ${M64P_COMPONENTS}; do
+		plugin=`echo "${component}" | cut -d , -f 1`
 
-	if [ "$plugin" = "core" ]; then
-		set APIDIR="../../../../$repository/mupen64plus-core/src/api"
-		break
-	fi
-done
+		if [ "$plugin" = "core" ]; then
+			repository=`echo "${component}" | cut -d , -f 2`
+
+			set APIDIR="../../../../$repository/mupen64plus-core/src/api"
+			break
+		fi
+	done
+fi
+
+echo "-----------------------------------------------"
+echo "APIDIR=$APIDIR"
+echo "-----------------------------------------------"
 
 #-------------------------------------- Change Branch --------------------------------------------
 
