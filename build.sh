@@ -535,6 +535,6 @@ for component in ${M64P_COMPONENTS}; do
 
 	# dev_build can install into test folder
 	if [ "$DEV" = "1" ]; then
-		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $flags ${MAKE_INSTALL} DESTDIR="${BUILDDIR}/test"
+		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $flags ${MAKE_INSTALL} COREDIR="${BUILDDIR}/test" DESTDIR="${BUILDDIR}/test"
 	fi
 done

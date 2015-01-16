@@ -6,5 +6,9 @@ if [ -z "$CLEAN" ]; then
 CLEAN="0"
 fi
 
-DEV=$DEV CLEAN=$CLEAN ./build.sh
+if [ -z "$COREDIR" ]; then
+COREDIR="./"
+fi
+
+COREDIR=$COREDIR DEV=$DEV CLEAN=$CLEAN ./build.sh
 
