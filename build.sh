@@ -419,22 +419,15 @@ done
 
 #-------------------------------------- set API Directory ----------------------------------------
 
-if [ -z "$APIDIR" ]; then
-	for component in ${M64P_COMPONENTS}; do
-		plugin=`echo "${component}" | cut -d , -f 1`
+for component in ${M64P_COMPONENTS}; do
+	plugin=`echo "${component}" | cut -d , -f 1`
+	repository=`echo "${component}" | cut -d , -f 2`
 
-		if [ "$plugin" = "core" ]; then
-			repository=`echo "${component}" | cut -d , -f 2`
-
-			set APIDIR="../../../../$repository/mupen64plus-core/src/api"
-			break
-		fi
-	done
-fi
-
-echo "-----------------------------------------------"
-echo "APIDIR=$APIDIR"
-echo "-----------------------------------------------"
+	if [ "$plugin" = "core" ]; then
+		set APIDIR="../../../../$repository/mupen64plus-core/src/api"
+		break
+	fi
+done
 
 #-------------------------------------- Change Branch --------------------------------------------
 
@@ -472,19 +465,19 @@ done
 
 #--------------------------------------- Check free memory --------------------------------------------
 
-# maybe we should test amount of memory being used?
-MEM_TOTAL=`free -m -t | grep "Total:" | sed -r 's: +:\t:g' | cut -f 2`
-MEM_MEM=`free -m | grep "Mem:" | sed -r 's: +:\t:g' | cut -f 2`
-#MEM_TOTAL_FREE=`free -m -t | grep "Total:" | sed -r 's: +:\t:g' | cut -f 4`
+RESULT=`free -m -t | grep "Total:" | sed -r 's: +:\t:g' | cut -f 2`
 
-if [ $MEM_TOTAL -lt $MEM_REQ ]; then
+if [ $RESULT -lt $MEM_REQ ]; then
 	echo "Not enough memory to build"
 
 	#does /etc/dphys-swapfile specify a value?
 	if [ -e "/etc/dphys-swapfile" ]; then
 		SWAP_RESULT="grep CONF_SWAPSIZE /etc/dphys-swapfile"
-		REQ=`expr $MEM_REQ - $MEM_MEM`
 		
+		RESULT=`free -m | grep "Mem:" | sed -r 's: +:\t:g' | cut -f 2`
+
+		REQ=`expr $MEM_REQ - $RESULT`
+
 		if [ `echo "$SWAP_RESULT" | cut -c1 ` = "#" ]; then
 			echo "Please enable CONF_SWAPSIZE=$REQ in /etc/dphys-swapfile and run 'sudo dphys-swapfile setup; sudo reboot'"
 		else
@@ -545,6 +538,6 @@ for component in ${M64P_COMPONENTS}; do
 
 	# dev_build can install into test folder
 	if [ "$DEV" = "1" ]; then
-		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $flags ${MAKE_INSTALL} COREDIR="${BUILDDIR}/test" DESTDIR="${BUILDDIR}/test"
+		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $flags ${MAKE_INSTALL} DESTDIR="${BUILDDIR}/test"
 	fi
 done
