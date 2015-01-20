@@ -22,6 +22,7 @@ if [ "$1" = "-h" -o "$1" = "--help" ]; then
 	echo "    BUILDDIR=[./] | PREFIX=[./]  Directory to download and build plugins in"
 	echo "    REPO=[mupen64plus]           Default repository from https://github.com"
 	echo "    CLEAN_SDL2=[0]               Clean SDL2 build"
+	echo "    CHECK_SDL2=[1]               Perform a compatibility check on SDL2"
 	echo "    X11=[0|1|2]                  X11 / SDL support:"
 	echo "                                 0 = if SDL already installed then use its config"
 	echo "                                     else build with no X11 support"
@@ -40,11 +41,15 @@ fi
 #the file to read the git repository list from
 defaultPluginList="defaultList"
 MEM_REQ=750			# The number of M bytes of memory required to build
-USE_SDL2=1			# Use SDL2?
+			
 SDL2="SDL2-2.0.3"		# SDL Library version
 SDL_CFG="--disable-video-opengl "
 
 #------------ Defaults -----------------------------------------------------------
+
+if [ -z "$CHECK_SDL2" ]; then
+CHECK_SDL2=1
+fi
 
 if [ -z "$GCC" ]; then
 GCC=4.7
@@ -183,22 +188,32 @@ fi
 
 #------------------------------- SDL dev libraries --------------------------------------------
 
-if [ "$USE_SDL2" = "1" ]; then
+if [ "$CHECK_SDL2" = "1" ]; then
 	DOWNLOAD_SDL2=1
 	BUILD_SDL2=1
+	SDL2_LOCATION=""
 
+	#search the users PATH to find sdl2-config
+	for T in `echo "$PATH" | sed -r 's/:/ /g'` ; do
+		if [ -x "$T/sdl2-config" ]; then
+			SDL2_LOCATION=`sdl2-config --cflags | cut -d " " -f 1 | cut -c 3- | sed -r 's:/include/SDL2::g'`
+			break
+		fi
+	done
+	
 	# check existing installation
-	if [ -e "/usr/local/include/SDL2/SDL_config.h" ]; then
+	if [ -e "$SDL2_LOCATION/include/SDL2/SDL_config.h" ]; then
 		set +e
-		SDL_VIDEO_ES2=`grep -c "#define SDL_VIDEO_OPENGL_ES2\ 1" /usr/local/include/SDL2/SDL_config.h`
-		SDL_VIDEO_X11=`grep -c "#define SDL_VIDEO_DRIVER_X11\ 1" /usr/local/include/SDL2/SDL_config.h`
+		SDL_VIDEO_ES2=`grep -c "#define SDL_VIDEO_OPENGL_ES2\ 1" $SDL2_LOCATION/include/SDL2/SDL_config.h`
+		SDL_VIDEO_X11=`grep -c "#define SDL_VIDEO_DRIVER_X11\ 1" $SDL2_LOCATION/include/SDL2/SDL_config.h`
+		SDL_VIDEO_RPI=`grep -c "#define SDL_VIDEO_DRIVER_RPI\ 1" $SDL2_LOCATION/include/SDL2/SDL_config.h`
 		set -e
 
 		#if SDL was configured with GLES V2 support
 		if [ "$SDL_VIDEO_ES2" != "" ]; then
 			BUILD_SDL2=0
 		fi
-		
+
 		if [ "$X11" == "1" ] && [ "$SDL_VIDEO_X11" != "1" ]; then
 			BUILD_SDL2=1
 		fi 
@@ -206,12 +221,17 @@ if [ "$USE_SDL2" = "1" ]; then
 		if [ "$X11" == "2" ] && [ "$SDL_VIDEO_X11" != "0" ]; then
 			BUILD_SDL2=1
 		fi
+
+		if [ "$SDL_VIDEO_RPI" == "0" ]; then
+			echo "SDL2 is missing the Raspberry PI Driver. You will not be able to run mupen64plus in the console."
+			sleep 5
+		fi
 	fi
 
 	if [ -e "${BUILDDIR}/${SDL2}" ]; then
 		DOWNLOAD_SDL2=0
 	fi
-	
+
 	if [ "$BUILD_SDL2" == "1" ] && [ "$DOWNLOAD_SDL2" = "1" ]; then
 		pushd "${BUILDDIR}"
 		echo "************************************ Downloading SDL2"
@@ -229,7 +249,7 @@ if [ "$USE_SDL2" = "1" ]; then
 			make distclean
 		fi
 
-		
+
 		CONFIGURE_SDL2=1
 
 		#check to see if local build is configured correctly. A make distclean will remove config.status but not SDL_config.h
@@ -272,10 +292,10 @@ if [ "$USE_SDL2" = "1" ]; then
 
 		if [ "$IAM" = "root" ]; then
 			echo "************************************ Install SDL2"
-			make install
+			make install prefix=$SDL2_LOCATION
 		else
-			echo "You need to install SDL2 development libraries"
-			echo "Either run this script with sudo/root or run 'pushd ${BUILDDIR}/$SDL2; sudo make install; popd'"
+			echo "You need to install SDL2 libraries"
+			echo "Either run this script with sudo/root or run 'pushd ${BUILDDIR}/$SDL2; sudo make install prefix=$SDL2_LOCATION; popd'"
 			exit 1
 		fi
 		popd
@@ -284,24 +304,8 @@ if [ "$USE_SDL2" = "1" ]; then
 	# we could statically link by using the following:
 	#SDL_CFLAGS="-I${BUILDDIR}/${SDL2}/include -I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux -D_REENTRANT "
 	#SDL_LDLIBS="${BUILDDIR}/${SDL2}/build/.libs/libSDL2.a -Wl,-rpath,/usr/local/lib -lpthread "
-	SDL_CFLAGS=`sdl2-config --cflags`
-  	SDL_LDLIBS=`sdl2-config --libs`
-  else
-	if [ "$IAM" = "root" ]; then
-		if [ ! -e "/usr/bin/sdl-config" ]; then
-			echo "************************************ Downloading/Installing SDL"
-			apt_update
-			apt-get install -y libsdl1.2-dev
-		fi
-	else
-		if [ ! -e "/usr/bin/sdl-config" ]; then
-			echo "You need to install SDL development libraries"
-			echo "Either run this script with sudo/root or run 'sudo apt-get install libsdl1.2-dev'"
-			exit 1
-		fi
-	fi
-  	SDL_CFLAGS=`sdl-config --cflags`
-  	SDL_LDLIBS=`sdl-config --libs`
+	#SDL_CFLAGS=`sdl2-config --cflags`
+  	#SDL_LDLIBS=`sdl2-config --libs`
 fi
 
 #------------------------------- Setup Information to debug problems --------------------------------
@@ -331,15 +335,7 @@ if [ 1 -eq 1 ]; then
 		echo "Using DefaultList"
 	fi
 
-	if [ "$USE_SDL2" = "1" ] && [ -e "/usr/local/bin/sdl2-config" ]; then
-		echo "Using SDL 2"
-	else
-		if [ -e "/usr/bin/sdl-config" ]; then
-			echo "Using SDL1.2"
-		else
-			echo "Unknown SDL setup"
-		fi
-	fi
+	echo "SDL2 `sdl2-config --version` located at $SDL2_LOCATION"
 
 	if [ -e "/boot/config.txt" ]; then
 		cat /boot/config.txt | grep "gpu_mem"
@@ -394,8 +390,17 @@ for component in ${M64P_COMPONENTS}; do
 	fi
 
 	if [ ! -e "${BUILDDIR}/$repository/mupen64plus-${plugin}" ]; then
+		if [ "$DEV" = "0" ]; then
+			CLONE_DEPTH="--depth 1"
+		fi
 		echo "************************************ Downloading ${plugin} from ${repository} to ${BUILDDIR}/$repository/mupen64plus-${plugin}"
-		git clone https://github.com/${repository}/mupen64plus-${plugin} ${BUILDDIR}/$repository/mupen64plus-${plugin}
+		git clone $CLONE_DEPTH https://github.com/${repository}/mupen64plus-${plugin} ${BUILDDIR}/$repository/mupen64plus-${plugin}
+
+		if [ "$DEV" = "1" ]; then
+			pushd "${BUILDDIR}/$repository/mupen64plus-${plugin}"
+			git checkout $branch
+			popd
+		fi
 	else
 		if [ "$DEV" = "0" ]; then
 			pushd "${BUILDDIR}/$repository/mupen64plus-$plugin"
@@ -531,9 +536,9 @@ for component in ${M64P_COMPONENTS}; do
 	# RPIFLAGS ?= -fgcse-after-reload -finline-functions -fipa-cp-clone -funswitch-loops -fpredictive-commoning -ftree-loop-distribute-patterns -ftree-vectorize
 	# These break in versions < 4.7.3 so override RPIFLAGS
 	if [ `echo "$GCC 4.7.3" | awk '{print ($1 < $2)}'` -eq 1 ]; then
-		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $flags COREDIR=$COREDIR RPIFLAGS=" " SDL_CFLAGS="$SDL_CFLAGS" SDL_LDLIBS="$SDL_LDLIBS"
+		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $flags COREDIR=$COREDIR RPIFLAGS=" "
 	else
-		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $flags COREDIR=$COREDIR SDL_CFLAGS="$SDL_CFLAGS" SDL_LDLIBS="$SDL_LDLIBS"
+		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $flags COREDIR=$COREDIR
 	fi
 
 	# dev_build can install into test folder
