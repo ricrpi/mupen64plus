@@ -462,6 +462,7 @@ for component in ${M64P_COMPONENTS}; do
 		currentBranch=`git branch | grep [*] | cut -b 3-;`
 		if [ ! "$branch" = "$currentBranch" ]; then
 			echo "************************************ Changing branch from ${currentBranch} to ${branch} for mupen64plus-${plugin}"
+			git pull
 			git checkout $branch
 		fi
 		popd
