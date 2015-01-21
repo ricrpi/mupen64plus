@@ -18,5 +18,7 @@ Developers should do the following:
 cd mupen64plus</pre>
 Then modify the 'defaultList' file to point to repositories you want to use.
 Run `./dev_build.sh` to download and build into `./test/`
+
 Run `./cfg_developer.sh` to set username/email for pushing updates, setting 'upstream' remotes and creating symbolic links.
+
 Optionally, run `./cfg_ssh.sh` if you want to use ssh keys to push/pull from Github
