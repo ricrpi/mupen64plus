@@ -5,7 +5,7 @@ A set of utilities for automatically installing mupen64plus on the Raspberry Pi
 
 Install dependencies:
 ```
- sudo apt-get install libglu1-mesa-dev libpng12-dev
+ sudo apt-get install libsdl1.2-dev
 ```
 
 Users should run the following to install:
