@@ -41,7 +41,7 @@ fi
 #the file to read the git repository list from
 defaultPluginList="defaultList"
 MEM_REQ=750			# The number of M bytes of memory required to build
-			
+
 SDL2="SDL2-2.0.3"		# SDL Library version
 SDL_CFG="--disable-video-opengl "
 
@@ -118,7 +118,7 @@ fi
 
 if [ ! -e "$defaultPluginList" ]; then
 	echo "Cannot find file: $defaultPluginList"
-	exit 
+	exit
 fi
 
 #get file contents, ignore comments, blank lines and replace multiple tabs with single comma
@@ -191,16 +191,9 @@ fi
 if [ "$CHECK_SDL2" = "1" ]; then
 	DOWNLOAD_SDL2=1
 	BUILD_SDL2=1
-	SDL2_LOCATION=""
 
-	#search the users PATH to find sdl2-config
-	for T in `echo "$PATH" | sed -r 's/:/ /g'` ; do
-		if [ -x "$T/sdl2-config" ]; then
-			SDL2_LOCATION=`sdl2-config --cflags | cut -d " " -f 1 | cut -c 3- | sed -r 's:/include/SDL2::g'`
-			break
-		fi
-	done
-	
+	SDL2_LOCATION=`sdl2-config --prefix`
+
 	# check existing installation
 	if [ -e "$SDL2_LOCATION/include/SDL2/SDL_config.h" ]; then
 		set +e
@@ -216,7 +209,7 @@ if [ "$CHECK_SDL2" = "1" ]; then
 
 		if [ "$X11" == "1" ] && [ "$SDL_VIDEO_X11" != "1" ]; then
 			BUILD_SDL2=1
-		fi 
+		fi
 
 		if [ "$X11" == "2" ] && [ "$SDL_VIDEO_X11" != "0" ]; then
 			BUILD_SDL2=1
@@ -240,7 +233,7 @@ if [ "$CHECK_SDL2" = "1" ]; then
 		popd
 	fi
 
-	if [ "$BUILD_SDL2" == "1" ]; then	
+	if [ "$BUILD_SDL2" == "1" ]; then
 		pushd ${BUILDDIR}/${SDL2}
 
 		if [ -e "Makefile" ] && [ "$CLEAN_SDL2" = "1" ]; then
@@ -248,7 +241,6 @@ if [ "$CHECK_SDL2" = "1" ]; then
 			make clean
 			make distclean
 		fi
-
 
 		CONFIGURE_SDL2=1
 
@@ -258,12 +250,12 @@ if [ "$CHECK_SDL2" = "1" ]; then
 			SDL_VIDEO_ES2=`grep -c "#define SDL_VIDEO_OPENGL_ES2\ 1" include/SDL_config.h`
 			SDL_VIDEO_X11=`grep -c "#define SDL_VIDEO_DRIVER_X11\ 1" include/SDL_config.h`
 			set -e
-			
+
 			#if SDL was configured with GLES V2 support
 			if [ "$SDL_VIDEO_ES2" != "" ]; then
 				CONFIGURE_SDL2=0
 			fi
-		
+
 			if [ "$X11" == "1" ] && [ "$SDL_VIDEO_X11" != "1" ]; then
 				CONFIGURE_SDL2=1
 			fi
@@ -369,7 +361,7 @@ for component in ${M64P_COMPONENTS}; do
 	plugin=`echo "${component}" | cut -d , -f 1`
 	repository=`echo "${component}" | cut -d , -f 2`
 	branch=`echo "${component}" | cut -d , -f 3`
-	
+
 	if [ -z "$plugin" ]; then
 		continue
 	fi
@@ -391,7 +383,7 @@ for component in ${M64P_COMPONENTS}; do
 
 	if [ ! -e "${BUILDDIR}/$repository/mupen64plus-${plugin}" ]; then
 		if [ "$DEV" = "0" ]; then
-			CLONE_DEPTH="--depth 1"
+			CLONE_DEPTH="--depth 1 --branch $branch "
 		fi
 		echo "************************************ Downloading ${plugin} from ${repository} to ${BUILDDIR}/$repository/mupen64plus-${plugin}"
 		git clone $CLONE_DEPTH https://github.com/${repository}/mupen64plus-${plugin} ${BUILDDIR}/$repository/mupen64plus-${plugin}
@@ -462,7 +454,6 @@ for component in ${M64P_COMPONENTS}; do
 		currentBranch=`git branch | grep [*] | cut -b 3-;`
 		if [ ! "$branch" = "$currentBranch" ]; then
 			echo "************************************ Changing branch from ${currentBranch} to ${branch} for mupen64plus-${plugin}"
-			git pull
 			git checkout $branch
 		fi
 		popd
@@ -479,7 +470,7 @@ if [ $RESULT -lt $MEM_REQ ]; then
 	#does /etc/dphys-swapfile specify a value?
 	if [ -e "/etc/dphys-swapfile" ]; then
 		SWAP_RESULT="grep CONF_SWAPSIZE /etc/dphys-swapfile"
-		
+
 		RESULT=`free -m | grep "Mem:" | sed -r 's: +:\t:g' | cut -f 2`
 
 		REQ=`expr $MEM_REQ - $RESULT`
@@ -533,7 +524,7 @@ for component in ${M64P_COMPONENTS}; do
 		`touch "${BUILDDIR}"/$repository/mupen64plus-ui-console/src/core_interface.c`
 	fi
 
-	# In ricrpi/mupen64plus-core we cannot compile with -03 on pi however some 03 optimizations can be applied i.e. 
+	# In ricrpi/mupen64plus-core we cannot compile with -03 on pi however some 03 optimizations can be applied i.e.
 	# RPIFLAGS ?= -fgcse-after-reload -finline-functions -fipa-cp-clone -funswitch-loops -fpredictive-commoning -ftree-loop-distribute-patterns -ftree-vectorize
 	# These break in versions < 4.7.3 so override RPIFLAGS
 	if [ `echo "$GCC 4.7.3" | awk '{print ($1 < $2)}'` -eq 1 ]; then
