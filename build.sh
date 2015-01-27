@@ -192,7 +192,10 @@ if [ "$CHECK_SDL2" = "1" ]; then
 	DOWNLOAD_SDL2=1
 	BUILD_SDL2=1
 
-	SDL2_LOCATION=`sdl2-config --prefix`
+	# discover SDL2 prefix, if it is present
+	set +e
+	SDL2_LOCATION=`sdl2-config --prefix 2>/dev/null`
+	set -e
 
 	# check existing installation
 	if [ -e "$SDL2_LOCATION/include/SDL2/SDL_config.h" ]; then
