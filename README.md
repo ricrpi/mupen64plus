@@ -3,6 +3,11 @@ mupen64plus-install
 
 A set of utilities for automatically installing mupen64plus on the Raspberry Pi
 
+Install dependencies:
+```
+ sudo apt-get install libsdl1.2-dev
+```
+
 Users should run the following to install:
 ```
 git clone https://github.com/ricrpi/mupen64plus
