@@ -13,13 +13,13 @@ ui-console		mupen64plus	master		,
 
 #==================================== audio =========================================
 
-audio-omx		ricrpi		master		
-audio-sdl		mupen64plus	master				# compiles and works but slower than omx
+audio-omx		ricrpi		master		,
+audio-sdl		mupen64plus	master		,		# compiles and works but slower than omx
 
 #==================================== input =========================================
 
 #input-sdl		ricrpi		master		mupen64plus	# optimizations make no perceivable difference
-input-sdl		mupen64plus	master
+input-sdl		mupen64plus	master		,
 
 #==================================== rsp ===========================================
 
@@ -30,8 +30,8 @@ rsp-hle			ricrpi		master		mupen64plus
 	
 #==================================== video =========================================
 		
-video-gles2rice		ricrpi		master
-video-gles2n64		ricrpi		master
+video-gles2rice		ricrpi		master		,		VC=1
+video-gles2n64		ricrpi		master		,		VC=1
 
 #video-rice		mupen64plus	master
 #video-glide64		mupen64plus	master
