@@ -3,7 +3,7 @@
 #plugin name		repository	branch		upstream	flags
 #====================================================================================
 
-core			ricrpi		ric_dev		mupen64plus	USE_GLES=1 VFP=1 # need to merge with master branch
+core			ricrpi		ric_dev		mupen64plus	USE_GLES=1 VFP=1 VFP_HARD=1 # need to merge with master branch
 #core			mupen64plus	master		,
 
 #==================================== front-end =====================================
@@ -13,7 +13,7 @@ ui-console		mupen64plus	master		,
 
 #==================================== audio =========================================
 
-audio-omx		ricrpi		master		,
+audio-omx		ricrpi		master		,		VC=1
 audio-sdl		mupen64plus	master		,		# compiles and works but slower than omx
 
 #==================================== input =========================================
