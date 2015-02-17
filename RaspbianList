@@ -3,7 +3,7 @@
 #plugin name		repository	branch		upstream	flags
 #====================================================================================
 
-core			ricrpi		ric_dev		mupen64plus	USE_GLES=1 VFP=1 VFP_HARD=1 # need to merge with master branch
+core			ricrpi		ric_dev		mupen64plus	USE_GLES=1 VFP=1 VFP_HARD=1 VC=1 # need to merge with master branch
 #core			mupen64plus	master		,
 
 #==================================== front-end =====================================
