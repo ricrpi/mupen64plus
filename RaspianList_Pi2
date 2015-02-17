@@ -1,0 +1,36 @@
+# This is the list of plugins to be installed by the automated scripts
+
+#plugin name		repository	branch		upstream	flags
+#====================================================================================
+
+core			ricrpi		ric_dev		mupen64plus	USE_GLES=1 NEON=1 VC=1 # need to merge with master branch
+#core			mupen64plus	master		,					# should work now
+
+#==================================== front-end =====================================
+
+ui-console		mupen64plus	master		,
+
+#==================================== audio =========================================
+
+audio-omx		ricrpi		master		,		VC=1
+audio-sdl		mupen64plus	master		,		# compiles and works but slower than omx
+
+#==================================== input =========================================
+
+input-sdl		mupen64plus	master		,
+
+#==================================== rsp ===========================================
+
+rsp-hle			ricrpi		master		mupen64plus
+#rsp-hle		mupen64plus	master				# mupen64plus version fails to build jpec.c with -O3
+#rsp-cxd4		mupen64plus	master				# does not compile (-mstackalign not a gcc option)
+#rsp-z64		mupen64plus	master				# compiles but does not work
+	
+#==================================== video =========================================
+		
+video-gles2rice		ricrpi		master		,		NEON=1 VC=1
+video-gles2n64		ricrpi		master		,		NEON=1 VC=1
+
+#==================================== rom ===========================================
+
+rom			mupen64plus	master
