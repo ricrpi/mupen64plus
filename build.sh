@@ -36,6 +36,20 @@ if [ "$1" = "-h" -o "$1" = "--help" ]; then
 	exit 0
 fi
 
+# check for build script updates
+
+if [ "$DEV" =  "0" ]; then
+	# update this installer
+	RESULT=`git pull origin`
+
+	if [ "$RESULT" != "Already up-to-date." ]; then
+		echo ""
+		echo "    Installer updated. Please re-run build.sh"
+		echo ""
+		exit
+	fi
+fi
+
 #-------------- User Configurable --------------------------------------------------
 
 #the file to read the git repository list from
@@ -355,18 +369,6 @@ if [ 1 -eq 1 ]; then
 fi
 
 #------------------------------- Download/Update plugins --------------------------------------------
-
-if [ "$DEV" =  "0" ]; then
-	# update this installer
-	RESULT=`git pull origin`
-
-	if [ "$RESULT" != "Already up-to-date." ]; then
-		echo ""
-		echo "    Installer updated. Please re-run build.sh"
-		echo ""
-		exit
-	fi
-fi
 
 for component in ${M64P_COMPONENTS}; do
 	plugin=`echo "${component}" | cut -d , -f 1`
