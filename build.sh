@@ -333,8 +333,16 @@ if [ 1 -eq 1 ]; then
 	echo "SDL2 `sdl2-config --version` located at $SDL2_LOCATION"
 
 	if [ -e "/boot/config.txt" ]; then
-		cat /boot/config.txt | grep "gpu_mem"
-		GPU=`cat /boot/config.txt | grep "gpu_mem" | cut -d "=" -f 2`
+		set +e
+		GPU_SET=`grep -c gpu_mem /boot/config.txt`
+		set -e
+		
+		if [ "$GPU_SET" = "1" ]; then
+			cat /boot/config.txt | grep "gpu_mem"
+			GPU=`cat /boot/config.txt | grep "gpu_mem" | cut -d "=" -f 2`
+		else
+			echo "gpu_mem not set in /boot/config.txt"
+		fi
 	fi
 
 	uname -a
