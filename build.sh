@@ -350,7 +350,7 @@ if [ 1 -eq 1 ]; then
 		set +e
 		GPU_SET=`grep -c gpu_mem /boot/config.txt`
 		set -e
-		
+
 		if [ "$GPU_SET" = "1" ]; then
 			cat /boot/config.txt | grep "gpu_mem"
 			GPU=`cat /boot/config.txt | grep "gpu_mem" | cut -d "=" -f 2`
@@ -395,9 +395,11 @@ for component in ${M64P_COMPONENTS}; do
 		branch="master"
 	fi
 
+	IFS=`echo -e "\t\n\f "`
+
 	if [ ! -e "${BUILDDIR}/$repository/mupen64plus-${plugin}" ]; then
 		if [ "$DEV" = "0" ]; then
-			CLONE_DEPTH="--depth 1 --branch $branch "
+			CLONE_DEPTH=" --depth 1 --branch $branch"
 		fi
 
 		echo "************************************ Downloading ${plugin} from ${repository} to ${BUILDDIR}/$repository/mupen64plus-${plugin}"
@@ -424,9 +426,10 @@ for component in ${M64P_COMPONENTS}; do
                 	git remote add upstream https://github.com/$upstream/mupen64plus-$plugin
 			popd
 		fi
-                git fetch upstream
-           	popd
-        fi
+            git fetch upstream
+        popd
+    fi
+	IFS=`echo -e "\t\n\f"`
 done
 
 #-------------------------------------- set API Directory ----------------------------------------
@@ -463,6 +466,7 @@ for component in ${M64P_COMPONENTS}; do
 		branch="master"
 	fi
 
+	IFS=`echo -e "\t\n\f "`
 	if [ "$DEV" = "0" ]; then
 		pushd "${BUILDDIR}/$repository/mupen64plus-${plugin}"
 
@@ -473,6 +477,7 @@ for component in ${M64P_COMPONENTS}; do
 		fi
 		popd
 	fi
+	IFS=`echo -e "\t\n\f"`
 done
 
 #--------------------------------------- Check free memory --------------------------------------------
