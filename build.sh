@@ -370,6 +370,7 @@ fi
 
 #------------------------------- Download/Update plugins --------------------------------------------
 
+IFS=`echo -e "\t\n\f"`
 for component in ${M64P_COMPONENTS}; do
 	plugin=`echo "${component}" | cut -d , -f 1`
 	repository=`echo "${component}" | cut -d , -f 2`
@@ -398,6 +399,7 @@ for component in ${M64P_COMPONENTS}; do
 		if [ "$DEV" = "0" ]; then
 			CLONE_DEPTH="--depth 1 --branch $branch "
 		fi
+
 		echo "************************************ Downloading ${plugin} from ${repository} to ${BUILDDIR}/$repository/mupen64plus-${plugin}"
 		git clone $CLONE_DEPTH https://github.com/${repository}/mupen64plus-${plugin} ${BUILDDIR}/$repository/mupen64plus-${plugin}
 
