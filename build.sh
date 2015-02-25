@@ -52,8 +52,7 @@ fi
 
 #-------------- User Configurable --------------------------------------------------
 
-#the file to read the git repository list from
-defaultPluginList="defaultList"
+
 MEM_REQ=750			# The number of M bytes of memory required to build
 
 SDL2="SDL2-2.0.3"		# SDL Library version
@@ -61,43 +60,59 @@ SDL_CFG="--disable-video-opengl "
 
 #------------ Defaults -----------------------------------------------------------
 
+PLATFORM=`uname -m`
+#the default file to read the git repository list from
+if [ "$PLATFORM" = "armv6l" ]; then
+	defaultPluginList="RaspbianList"
+elif [ "$PLATFORM" = "armv7l" ]; then
+	defaultPluginList="RaspbianList_Pi2"
+else
+	defaultPluginList="x86List"
+fi
+
 if [ -z "$CHECK_SDL2" ]; then
-CHECK_SDL2=1
+	CHECK_SDL2=1
 fi
 
 if [ -z "$GCC" ]; then
-GCC=4.7
+	GCC=4.7
 fi
 
 if [ -z "$MAKE_SDL2" ]; then
-MAKE_SDL2="0"
+	MAKE_SDL2="0"
 fi
 
 if [ -z "$COREDIR" ]; then
-COREDIR="/usr/local/lib/"
+	COREDIR="/usr/local/lib/"
 fi
 
 if [ -z "$MAKE_SDL2" ]; then
-MAKE_SDL2="0"
+	MAKE_SDL2="0"
 fi
 
 if [ -z "$DEV" ]; then
-DEV="0"
+	DEV="0"
 fi
 
 if [ -z "$CLEAN" ]; then
-CLEAN="1"
+	CLEAN="1"
 fi
 
 if [ -z "$X11" ]; then
-X11="0"
+	X11="0"
 fi
 
 
 if [ "$X11" == "1" ]; then
-SDL_CFG="$SDL_CFG --enable-video-x11 "
+	SDL_CFG="$SDL_CFG --enable-video-x11 "
 else
-SDL_CFG="$SDL_CFG --disable-video-x11 "
+	SDL_CFG="$SDL_CFG --disable-video-x11 "
+fi
+
+if [ "$V" = "1" ]; then
+	exec 3>&1
+else
+	exec 3>/dev/null
 fi
 
 IAM=`whoami`
@@ -406,29 +421,28 @@ for component in ${M64P_COMPONENTS}; do
 		git clone $CLONE_DEPTH https://github.com/${repository}/mupen64plus-${plugin} ${BUILDDIR}/$repository/mupen64plus-${plugin}
 
 		if [ "$DEV" = "1" ]; then
-			pushd "${BUILDDIR}/$repository/mupen64plus-${plugin}"
+			pushd "${BUILDDIR}/$repository/mupen64plus-${plugin}" >&3
 			git checkout $branch
-			popd
+			popd >&3
 		fi
 	else
 		if [ "$DEV" = "0" ]; then
-			pushd "${BUILDDIR}/$repository/mupen64plus-$plugin"
+			pushd "${BUILDDIR}/$repository/mupen64plus-$plugin" >&3
 			echo "checking $plugin from $repository is up-to-date"
-			echo `git pull origin $branch `
-			popd
+			echo `git pull origin $branch`
+			popd >&3
 		fi
 	fi
 
 	if [ -n "$upstream" ] && [ "$DEV" = "1" ]; then
-               	pushd ${BUILDDIR}/$repository/mupen64plus-$plugin
+               	pushd ${BUILDDIR}/$repository/mupen64plus-$plugin >&3
 		if [ `git remote | grep upstream` = "" ]; then
                 	echo "Setting upstream remote on repository"
                 	git remote add upstream https://github.com/$upstream/mupen64plus-$plugin
-			popd
 		fi
-            git fetch upstream
-        popd
-    fi
+            	git fetch upstream
+        	popd >&3
+    	fi
 	IFS=`echo -e "\t\n\f"`
 done
 
@@ -467,20 +481,25 @@ for component in ${M64P_COMPONENTS}; do
 	fi
 
 	IFS=`echo -e "\t\n\f "`
+
 	if [ "$DEV" = "0" ]; then
-		pushd "${BUILDDIR}/$repository/mupen64plus-${plugin}"
+		pushd "${BUILDDIR}/$repository/mupen64plus-${plugin}" >&3
 
 		currentBranch=`git branch | grep [*] | cut -b 3-;`
 		if [ ! "$branch" = "$currentBranch" ]; then
 			echo "************************************ Changing branch from ${currentBranch} to ${branch} for mupen64plus-${plugin}"
 			git checkout $branch
 		fi
-		popd
+		popd >&3
 	fi
+
 	IFS=`echo -e "\t\n\f"`
 done
 
+IFS=`echo -e "\t\n\f "`
+
 #--------------------------------------- Check free memory --------------------------------------------
+
 
 RESULT=`free -m -t | grep "Total:" | sed -r 's: +:\t:g' | cut -f 2`
 
@@ -506,6 +525,7 @@ fi
 
 #--------------------------------------- Build plugins --------------------------------------------
 
+IFS=`echo -e "\t\n\f"`
 for component in ${M64P_COMPONENTS}; do
 	plugin=`echo "${component}" | cut -d , -f 1`
 	repository=`echo "${component}" | cut -d , -f 2`
@@ -535,6 +555,8 @@ for component in ${M64P_COMPONENTS}; do
 
 	echo "************************************ Building ${plugin} ${component_type}"
 
+	IFS=`echo -e "\t\n\f "`
+
 	if [ "$CLEAN" = "1" ]; then
 		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix clean
 	fi
@@ -548,13 +570,24 @@ for component in ${M64P_COMPONENTS}; do
 	# RPIFLAGS ?= -fgcse-after-reload -finline-functions -fipa-cp-clone -funswitch-loops -fpredictive-commoning -ftree-loop-distribute-patterns -ftree-vectorize
 	# These break in versions < 4.7.3 so override RPIFLAGS
 	if [ `echo "$GCC 4.7.3" | awk '{print ($1 < $2)}'` -eq 1 ]; then
+		if [ "$V" = "1" ]; then
+			echo "$> $MAKE -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $flags COREDIR=$COREDIR RPIFLAGS=\" \""
+		fi
 		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $flags COREDIR=$COREDIR RPIFLAGS=" "
 	else
+		if [ "$V" = "1" ]; then
+			echo "$> $MAKE -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $flags COREDIR=$COREDIR"
+		fi
 		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $flags COREDIR=$COREDIR
 	fi
 
 	# dev_build can install into test folder
 	if [ "$DEV" = "1" ]; then
+		if [ "$V" = "1" ]; then
+			echo "$MAKE -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $flags ${MAKE_INSTALL} DESTDIR=\"${BUILDDIR}/test\""
+		fi
 		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $flags ${MAKE_INSTALL} DESTDIR="${BUILDDIR}/test"
 	fi
+
+	IFS=`echo -e "\t\n\f"`
 done
