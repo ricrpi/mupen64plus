@@ -348,17 +348,6 @@ if [ 1 -eq 1 ]; then
 
 	echo "DEV: $DEV"
 
-	#Check what is being built"
-	RESULT=`git diff --name-only defaultList | wc -l`
-	if [ "$RESULT" = "1" ] || [ -n "$PLUGIN_LIST" ]; then
-		echo "Using Modifed List"
-#		echo "--------------------------"
-#		cat "$defaultPluginList"
-#		echo "--------------------------"
-	else
-		echo "Using DefaultList"
-	fi
-
 	echo "SDL2 `sdl2-config --version` located at $SDL2_LOCATION"
 
 	if [ -e "/boot/config.txt" ]; then
