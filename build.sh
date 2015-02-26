@@ -38,7 +38,11 @@ fi
 
 # check for build script updates
 
-if [ "$DEV" =  "0" ]; then
+if [ -z "$DEV" ]; then
+	DEV="0"
+fi
+
+if [ "$DEV" = "0" ]; then
 	# update this installer
 	RESULT=`git pull origin`
 	echo "$RESULT" >&3
@@ -89,10 +93,6 @@ fi
 
 if [ -z "$MAKE_SDL2" ]; then
 	MAKE_SDL2="0"
-fi
-
-if [ -z "$DEV" ]; then
-	DEV="0"
 fi
 
 if [ -z "$CLEAN" ]; then
