@@ -36,27 +36,8 @@ if [ "$1" = "-h" -o "$1" = "--help" ]; then
 	exit 0
 fi
 
-# check for build script updates
-
-if [ -z "$DEV" ]; then
-	DEV="0"
-fi
-
-if [ "$DEV" = "0" ]; then
-	# update this installer
-	RESULT=`git pull origin`
-	echo "$RESULT" >&3
-	
-	if [ "$RESULT" != "Already up-to-date." ]; then
-		echo ""
-		echo "    Installer updated. Please re-run build.sh"
-		echo ""
-		exit
-	fi
-fi
 
 #-------------- User Configurable --------------------------------------------------
-
 
 MEM_REQ=750			# The number of M bytes of memory required to build
 
@@ -114,6 +95,24 @@ if [ "$V" = "1" ]; then
 	exec 3>&1
 else
 	exec 3>/dev/null
+fi
+
+if [ -z "$DEV" ]; then
+	DEV="0"
+fi
+
+# check for build script updates
+if [ "$DEV" = "0" ]; then
+	# update this installer
+	RESULT=`git pull origin`
+	echo "$RESULT" >&3
+	
+	if [ "$RESULT" != "Already up-to-date." ]; then
+		echo ""
+		echo "    Installer updated. Please re-run build.sh"
+		echo ""
+		exit
+	fi
 fi
 
 IAM=`whoami`
