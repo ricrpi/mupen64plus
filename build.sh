@@ -106,7 +106,7 @@ if [ "$DEV" = "0" ]; then
 	# update this installer
 	RESULT=`git pull origin`
 	echo "$RESULT" >&3
-	
+
 	if [ "$RESULT" != "Already up-to-date." ]; then
 		echo ""
 		echo "    Installer updated. Please re-run build.sh"
@@ -346,6 +346,9 @@ if [ 1 -eq 1 ]; then
 	RESULT=`git log -n 1 | head -n 1`
 	echo "Build script: $RESULT"
 
+	# output video core IV binary version
+	vcgencmd version
+
 	echo "DEV: $DEV"
 
 	echo "SDL2 `sdl2-config --version` located at $SDL2_LOCATION"
@@ -379,6 +382,7 @@ for component in ${M64P_COMPONENTS}; do
 	plugin=`echo "${component}" | cut -d , -f 1`
 	repository=`echo "${component}" | cut -d , -f 2`
 	branch=`echo "${component}" | cut -d , -f 3`
+	upstream=`echo "${component}" | cut -d , -f 4`
 
 	if [ -z "$plugin" ]; then
 		continue
@@ -425,7 +429,7 @@ for component in ${M64P_COMPONENTS}; do
 
 	if [ -n "$upstream" ] && [ "$DEV" = "1" ]; then
                	pushd ${BUILDDIR}/$repository/mupen64plus-$plugin >&3
-		if [ `git remote | grep upstream` = "" ]; then
+		if [ `git remote | grep upstream` -z ]; then
                 	echo "Setting upstream remote on repository"
                 	git remote add upstream https://github.com/$upstream/mupen64plus-$plugin
 		fi
