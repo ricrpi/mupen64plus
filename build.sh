@@ -429,8 +429,9 @@ for component in ${M64P_COMPONENTS}; do
 
 	if [ -n "$upstream" ] && [ "$DEV" = "1" ]; then
                	pushd ${BUILDDIR}/$repository/mupen64plus-$plugin >&3
-		if [ `git remote | grep upstream` -z ]; then
-                	echo "Setting upstream remote on repository"
+		current=`git remote | grep upstream`
+		if [ "$current" = "" ]; then
+                	echo "Setting upstream remote on $repository to $upstream"
                 	git remote add upstream https://github.com/$upstream/mupen64plus-$plugin
 		fi
             	git fetch upstream
