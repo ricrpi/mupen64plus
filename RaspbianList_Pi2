@@ -8,7 +8,7 @@ core			ricrpi		ric_dev		mupen64plus	USE_GLES=1 NEON=1 VC=1 # need to merge with 
 
 #==================================== front-end =====================================
 
-ui-console		mupen64plus	master		,
+ui-console		ricrpi		master		,
 
 #==================================== audio =========================================
 
