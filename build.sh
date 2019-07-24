@@ -13,7 +13,7 @@ if [ "$1" = "-h" -o "$1" = "--help" ]; then
 	echo "    CLEAN=[1]                    Clean before build"
 	echo "    DEBUG=[0]                    Compile for Debugging"
 	echo "    DEV=[0]                      Development build - installs into ./test"
-	echo "    GCC=[4.7]                    Version of gcc to use"
+	echo "    GCC=[8]                      Version of gcc to use"
 	echo "    MAKE=[make]                  Make Utility to use"
 	echo "    COMP=                        The list of components to download and build"
 	echo "                                 The default is to read ./pluginList. "
@@ -61,7 +61,7 @@ if [ -z "$CHECK_SDL2" ]; then
 fi
 
 if [ -z "$GCC" ]; then
-	GCC=4.7
+	GCC=8
 fi
 
 if [ -z "$MAKE_SDL2" ]; then
