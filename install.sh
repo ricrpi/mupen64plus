@@ -63,7 +63,7 @@ for component in ${M64P_COMPONENTS}; do
 	flags=`echo "${component}" | cut -d , -f 5- | sed -r 's:,:\ :g'`
 
 	if [ "${plugin}" = "core" ]; then
-		set APIDIR="../../../../$repository/mupen64plus-core/src/api"
+		APIDIR="../../../../$repository/mupen64plus-core/src/api"
 		break
 	fi
 done
@@ -96,7 +96,7 @@ for component in ${M64P_COMPONENTS}; do
 #		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $flags COREDIR="/usr/local/lib/"
 #	else
 		mkdir -p "/usr/local/lib/mupen64plus"
-		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $flags
+		sh -c "$MAKE -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $flags"
 #	fi
 	
 done

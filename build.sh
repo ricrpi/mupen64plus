@@ -447,7 +447,7 @@ for component in ${M64P_COMPONENTS}; do
 	repository=`echo "${component}" | cut -d , -f 2`
 
 	if [ "$plugin" = "core" ]; then
-		set APIDIR="../../../../$repository/mupen64plus-core/src/api"
+		APIDIR="../../../../$repository/mupen64plus-core/src/api"
 		break
 	fi
 done
@@ -552,7 +552,7 @@ for component in ${M64P_COMPONENTS}; do
 	IFS=`echo -e "\t\n\f "`
 
 	if [ "$CLEAN" = "1" ]; then
-		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix clean
+		sh -c "$MAKE -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix clean"
 	fi
 
 	#if this is the console then do a clean so that COREDIR will be compiled correctly
@@ -572,7 +572,8 @@ for component in ${M64P_COMPONENTS}; do
 		if [ "$V" = "1" ]; then
 			echo "$> $MAKE -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $flags COREDIR=$COREDIR"
 		fi
-		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $flags COREDIR=$COREDIR
+		# Buster: retain quotes within $flags, namely for OPTFLAGS="-mflto -mfpu-neon"
+		sh -c "$MAKE -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix $flags COREDIR=$COREDIR all"
 	fi
 
 	# dev_build can install into test folder
@@ -580,7 +581,7 @@ for component in ${M64P_COMPONENTS}; do
 		if [ "$V" = "1" ]; then
 			echo "$MAKE -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $flags ${MAKE_INSTALL} DESTDIR=\"${BUILDDIR}/test\""
 		fi
-		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $flags ${MAKE_INSTALL} DESTDIR="${BUILDDIR}/test"
+		sh -c "$MAKE -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $flags ${MAKE_INSTALL} DESTDIR=\"${BUILDDIR}/test\""
 	fi
 
 	IFS=`echo -e "\t\n\f"`
