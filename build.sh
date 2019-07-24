@@ -107,7 +107,7 @@ if [ "$DEV" = "0" ]; then
 	RESULT=`git pull origin`
 	echo "$RESULT" >&3
 
-	if [ "$RESULT" != "Already up-to-date." ]; then
+	if [[ $RESULT != "Already up"* ]]; then
 		echo ""
 		echo "    Installer updated. Please re-run build.sh"
 		echo ""
