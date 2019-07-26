@@ -19,15 +19,7 @@ if [ "$1" = "-h" -o "$1" = "--help" ]; then
 	exit 0
 fi
 
-PLATFORM=`uname -m`
-#the default file to read the git repository list from
-if [ "$PLATFORM" = "armv6l" ]; then
-	defaultPluginList="RaspbianList"
-elif [ "$PLATFORM" = "armv7l" ]; then
-	defaultPluginList="RaspbianList_Pi2"
-else
-	defaultPluginList="x86List"
-fi
+defaultPluginList="defaultList"
 
 PATH=$PWD:$PATH
 

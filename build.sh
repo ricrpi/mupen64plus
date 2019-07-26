@@ -46,14 +46,24 @@ SDL_CFG="--disable-video-opengl "
 
 #------------ Defaults -----------------------------------------------------------
 
-PLATFORM=`uname -m`
-#the default file to read the git repository list from
-if [ "$PLATFORM" = "armv6l" ]; then
-	defaultPluginList="RaspbianList"
-elif [ "$PLATFORM" = "armv7l" ]; then
-	defaultPluginList="RaspbianList_Pi2"
-else
-	defaultPluginList="x86List"
+if [ -z "$defaultPluginList"]; then
+	PLATFORM=`uname -m`
+	#the default file to read the git repository list from
+	if [ "$PLATFORM" = "armv6l" ]; then
+		expectedPluginList="RaspbianList"
+	elif [ "$PLATFORM" = "armv7l" ]; then
+		expectedPluginList="RaspbianList_Pi2"
+	else
+		expectedPluginList="x86List"
+	fi
+	if [ `readlink -- defaultList` != "$expectedPluginList" ]; then
+		echo "Expected defaultList -> $expectedPluginList but got:"
+		ls -la defaultList
+		echo "Please change this symbolic link"
+		exit -1
+	fi
+
+	defaultPluginList="defaultList"
 fi
 
 if [ -z "$CHECK_SDL2" ]; then
