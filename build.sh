@@ -551,6 +551,7 @@ for component in ${M64P_COMPONENTS}; do
 
 	IFS=`echo -e "\t\n\f "`
 
+	# Buster: sh -c retains quotes within $flags, namely for OPTFLAGS="-mflto -mfpu-neon"
 	if [ "$CLEAN" = "1" ]; then
 		sh -c "$MAKE -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix clean"
 	fi
@@ -567,12 +568,11 @@ for component in ${M64P_COMPONENTS}; do
 		if [ "$V" = "1" ]; then
 			echo "$> $MAKE -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $flags COREDIR=$COREDIR RPIFLAGS=\" \""
 		fi
-		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $flags COREDIR=$COREDIR RPIFLAGS=" "
+		sh -c "$MAKE -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $flags COREDIR=$COREDIR RPIFLAGS=\" \""
 	else
 		if [ "$V" = "1" ]; then
 			echo "$> $MAKE -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $flags COREDIR=$COREDIR"
 		fi
-		# Buster: retain quotes within $flags, namely for OPTFLAGS="-mflto -mfpu-neon"
 		sh -c "$MAKE -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix $flags COREDIR=$COREDIR all"
 	fi
 
