@@ -241,6 +241,7 @@ if [ "$CHECK_SDL2" = "1" ]; then
 		set +e
 		SDL_VIDEO_ES2=`grep -c "#define SDL_VIDEO_OPENGL_ES2\ 1" $SDL2_LOCATION/include/SDL2/SDL_config.h`
 		SDL_VIDEO_X11=`grep -c "#define SDL_VIDEO_DRIVER_X11\ 1" $SDL2_LOCATION/include/SDL2/SDL_config.h`
+		SDL_VIDEO_KMSDRM=`grep -c "#define SDL_VIDEO_DRIVER_KMSDRM\ 1" $SDL2_LOCATION/include/SDL2/SDL_config.h`
 		SDL_VIDEO_RPI=`grep -c "#define SDL_VIDEO_DRIVER_RPI\ 1" $SDL2_LOCATION/include/SDL2/SDL_config.h`
 		set -e
 
@@ -257,8 +258,8 @@ if [ "$CHECK_SDL2" = "1" ]; then
 			BUILD_SDL2=1
 		fi
 
-		if [ "$SDL_VIDEO_RPI" == "0" ]; then
-			echo "SDL2 is missing the Raspberry PI Driver. You will not be able to run mupen64plus in the console."
+		if [ "$SDL_VIDEO_KMSDRM" == "0" ] && [ "$SDL_VIDEO_RPI" == "0" ]; then
+			echo "SDL2 does not have KMSDRM nor the legacy Raspberry Pi driver. mupen64plus will require an X11 session to run."
 			sleep 5
 		fi
 	fi
