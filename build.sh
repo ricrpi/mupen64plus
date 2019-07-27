@@ -13,7 +13,7 @@ if [ "$1" = "-h" -o "$1" = "--help" ]; then
 	echo "    CLEAN=[1]                    Clean before build"
 	echo "    DEBUG=[0]                    Compile for Debugging"
 	echo "    DEV=[0]                      Development build - installs into ./test"
-	echo "    GCC=[4.7]                    Version of gcc to use"
+	echo "    GCC=[8]                      Version of gcc to use"
 	echo "    MAKE=[make]                  Make Utility to use"
 	echo "    COMP=                        The list of components to download and build"
 	echo "                                 The default is to read ./pluginList. "
@@ -46,14 +46,24 @@ SDL_CFG="--disable-video-opengl "
 
 #------------ Defaults -----------------------------------------------------------
 
-PLATFORM=`uname -m`
-#the default file to read the git repository list from
-if [ "$PLATFORM" = "armv6l" ]; then
-	defaultPluginList="RaspbianList"
-elif [ "$PLATFORM" = "armv7l" ]; then
-	defaultPluginList="RaspbianList_Pi2"
-else
-	defaultPluginList="x86List"
+if [ -z "$defaultPluginList"]; then
+	PLATFORM=`uname -m`
+	#the default file to read the git repository list from
+	if [ "$PLATFORM" = "armv6l" ]; then
+		expectedPluginList="RaspbianList"
+	elif [ "$PLATFORM" = "armv7l" ]; then
+		expectedPluginList="RaspbianList_Pi2"
+	else
+		expectedPluginList="x86List"
+	fi
+	if [ `readlink -- defaultList` != "$expectedPluginList" ]; then
+		echo "Expected defaultList -> $expectedPluginList but got:"
+		ls -la defaultList
+		echo "Please change this symbolic link"
+		exit -1
+	fi
+
+	defaultPluginList="defaultList"
 fi
 
 if [ -z "$CHECK_SDL2" ]; then
@@ -61,7 +71,7 @@ if [ -z "$CHECK_SDL2" ]; then
 fi
 
 if [ -z "$GCC" ]; then
-	GCC=4.7
+	GCC=8
 fi
 
 if [ -z "$MAKE_SDL2" ]; then
@@ -107,7 +117,7 @@ if [ "$DEV" = "0" ]; then
 	RESULT=`git pull origin`
 	echo "$RESULT" >&3
 
-	if [ "$RESULT" != "Already up-to-date." ]; then
+	if [[ $RESULT != "Already up"* ]]; then
 		echo ""
 		echo "    Installer updated. Please re-run build.sh"
 		echo ""
@@ -231,6 +241,7 @@ if [ "$CHECK_SDL2" = "1" ]; then
 		set +e
 		SDL_VIDEO_ES2=`grep -c "#define SDL_VIDEO_OPENGL_ES2\ 1" $SDL2_LOCATION/include/SDL2/SDL_config.h`
 		SDL_VIDEO_X11=`grep -c "#define SDL_VIDEO_DRIVER_X11\ 1" $SDL2_LOCATION/include/SDL2/SDL_config.h`
+		SDL_VIDEO_KMSDRM=`grep -c "#define SDL_VIDEO_DRIVER_KMSDRM\ 1" $SDL2_LOCATION/include/SDL2/SDL_config.h`
 		SDL_VIDEO_RPI=`grep -c "#define SDL_VIDEO_DRIVER_RPI\ 1" $SDL2_LOCATION/include/SDL2/SDL_config.h`
 		set -e
 
@@ -247,8 +258,8 @@ if [ "$CHECK_SDL2" = "1" ]; then
 			BUILD_SDL2=1
 		fi
 
-		if [ "$SDL_VIDEO_RPI" == "0" ]; then
-			echo "SDL2 is missing the Raspberry PI Driver. You will not be able to run mupen64plus in the console."
+		if [ "$SDL_VIDEO_KMSDRM" == "0" ] && [ "$SDL_VIDEO_RPI" == "0" ]; then
+			echo "SDL2 does not have KMSDRM nor the legacy Raspberry Pi driver. mupen64plus will require an X11 session to run."
 			sleep 5
 		fi
 	fi
@@ -447,7 +458,7 @@ for component in ${M64P_COMPONENTS}; do
 	repository=`echo "${component}" | cut -d , -f 2`
 
 	if [ "$plugin" = "core" ]; then
-		set APIDIR="../../../../$repository/mupen64plus-core/src/api"
+		export APIDIR="../../../../$repository/mupen64plus-core/src/api"
 		break
 	fi
 done
@@ -551,8 +562,9 @@ for component in ${M64P_COMPONENTS}; do
 
 	IFS=`echo -e "\t\n\f "`
 
+	# Buster: sh -c retains quotes within $flags, namely for OPTFLAGS="-mflto -mfpu-neon"
 	if [ "$CLEAN" = "1" ]; then
-		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix clean
+		sh -c "$MAKE -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix clean"
 	fi
 
 	#if this is the console then do a clean so that COREDIR will be compiled correctly
@@ -567,12 +579,12 @@ for component in ${M64P_COMPONENTS}; do
 		if [ "$V" = "1" ]; then
 			echo "$> $MAKE -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $flags COREDIR=$COREDIR RPIFLAGS=\" \""
 		fi
-		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $flags COREDIR=$COREDIR RPIFLAGS=" "
+		sh -c "$MAKE -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $flags COREDIR=$COREDIR RPIFLAGS=\" \""
 	else
 		if [ "$V" = "1" ]; then
 			echo "$> $MAKE -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $flags COREDIR=$COREDIR"
 		fi
-		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix all $flags COREDIR=$COREDIR
+		sh -c "$MAKE -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix $flags COREDIR=$COREDIR all"
 	fi
 
 	# dev_build can install into test folder
@@ -580,7 +592,7 @@ for component in ${M64P_COMPONENTS}; do
 		if [ "$V" = "1" ]; then
 			echo "$MAKE -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $flags ${MAKE_INSTALL} DESTDIR=\"${BUILDDIR}/test\""
 		fi
-		"$MAKE" -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $flags ${MAKE_INSTALL} DESTDIR="${BUILDDIR}/test"
+		sh -c "$MAKE -C ${BUILDDIR}/$repository/mupen64plus-${plugin}/projects/unix install $flags ${MAKE_INSTALL} DESTDIR=\"${BUILDDIR}/test\""
 	fi
 
 	IFS=`echo -e "\t\n\f"`
