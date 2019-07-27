@@ -63,7 +63,7 @@ for component in ${M64P_COMPONENTS}; do
 	flags=`echo "${component}" | cut -d , -f 5- | sed -r 's:,:\ :g'`
 
 	if [ "${plugin}" = "core" ]; then
-		APIDIR="../../../../$repository/mupen64plus-core/src/api"
+		export APIDIR="../../../../$repository/mupen64plus-core/src/api"
 		break
 	fi
 done
